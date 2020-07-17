@@ -1,0 +1,404 @@
+00000000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 7/16/2020 5:44:48 PM
+
+00000000                             1      INCLUDE     "dependencies.X68"
+00000000                             2      INCLUDE     "print.X68"
+00000000                             3          OPT     MEX
+00000000  =00000000                  4  CODE    EQU     0
+00000000  =00000001                  5  TEXT    EQU     1
+00000000                             6  
+00000000                             7      SECTION     TEXT
+00002000                             8      ORG         $2000
+00000000                             9      SECTION     CODE
+00001000                            10      ORG         $1000
+00001000                            11  
+00001000                            12  PRINT   MACRO
+00001000                            13      SECTION     TEXT
+00001000                            14  MSG\@    DC.B    '\1'
+00001000                            15      IFARG    2
+00001000                            16          IFC      '\2','ENDL'
+00001000                            17              DC.B    $D,$A
+00001000                            18          ENDC
+00001000                            19      ENDC
+00001000                            20      DC.B    0
+00001000                            21      SECTION     CODE
+00001000                            22      MOVEM.L     D0/A1,-(SP)
+00001000                            23      LEA         MSG\@,A1
+00001000                            24      MOVE.B      #14,D0
+00001000                            25      TRAP        #15
+00001000                            26      MOVEM.L     (SP)+,D0/A1
+00001000                            27      ENDM
+00001000                            28  
+00001000                            29  PRINTN    MACRO
+00001000                            30      SECTION     CODE
+00001000                            31      MOVEM.L     D0/D1,-(SP)
+00001000                            32      IFNC '\1','D1'          if some register other than D1
+00001000                            33          MOVE.L    \1,D1       put number to display in D1
+00001000                            34      ENDC
+00001000                            35      IFEQ NARG-2         ; for unsigned ints
+00001000                            36          MOVE.B  #15,D0
+00001000                            37          MOVE.B  \2,D2   ; arg 2 is the new num base (ex: #16)
+00001000                            38      ENDC
+00001000                            39      IFEQ NARG-1         ; for signed ints
+00001000                            40          MOVE.B  #3,D0
+00001000                            41      ENDC
+00001000                            42      TRAP    #15             display number in D1
+00001000                            43      MOVEM.L (SP)+,D0/D1
+00001000                            44      ENDM
+00001000                            45  
+00001000                            46  
+00001000                            47  
+00001000                            48  
+00001000                            49  
+00001000                            50  
+00001000                            51  
+00001000                            52  
+00001000                            53  
+00001000                            54  
+00001000                            55  -------------------- end include --------------------
+00001000                            56      INCLUDE     "isolateBits.X68"
+00001000                            57  isolateBits
+00001000                            58      ; D0 contains the number you'd like to isolate bits on
+00001000                            59      ; D1 contains the starting bit number, ranging from 31-0
+00001000                            60      ; D2 contains the stopping bit number, ranging from 30-0
+00001000                            61      
+00001000                            62      ; Save D3 before we overwrite it
+00001000  2F03                      63      MOVE.L      D3,-(SP)
+00001002                            64      
+00001002                            65      ; D3 = 31 - D1 
+00001002  761F                      66      MOVE.L      #31, D3
+00001004  9601                      67      SUB.B       D1, D3 
+00001006                            68  
+00001006                            69      ; D0 = D0 << D3
+00001006  E7A8                      70      LSL.L       D3, D0
+00001008                            71  
+00001008                            72      ; D3 = D3 + D2 
+00001008  D602                      73      ADD.B       D2, D3
+0000100A                            74  
+0000100A                            75      ; D0 = D0 >> D3
+0000100A  E6A8                      76      LSR.L       D3, D0
+0000100C                            77      
+0000100C                            78      ; Restore D3 then return
+0000100C  261F                      79      MOVE.L      (SP)+,D3
+0000100E  4E75                      80      RTS
+00001010                            81  
+00001010                            82  ; example call:
+00001010                            83  ;   MOVE.L      #$1234, D0
+00001010                            84  ;   MOVE.B      #11, D1
+00001010                            85  ;   MOVE.B      #8, D2
+00001010                            86  ;   BSR         isolateBits
+00001010                            87  ;
+00001010                            88  ; return from this call:
+00001010                            89  ;   D0 = 0x2
+00001010                            90  
+00001010                            91      
+00001010                            92  isolateBitsM    MACRO
+00001010                            93      ; args same as above, except they're immediates or different regs
+00001010                            94      IFNE NARG-3                       ;if not 3 arguments
+00001010                            95          FAIL ERROR, isolateBits requires 3 arguments
+00001010                            96          MEXIT
+00001010                            97      ENDC
+00001010                            98      MOVE.L      \1,D0
+00001010                            99      MOVE.B      \2,D1
+00001010                           100      MOVE.B      \3,D2
+00001010                           101      BSR         isolateBits
+00001010                           102      ENDM
+00001010                           103      
+00001010                           104  ; example call:
+00001010                           105  ;   isolateBitsM    #$1234,#11,#8
+00001010                           106  ;
+00001010                           107  ; same as the above example
+00001010                           108  ; returns D0 = 0x2
+00001010                           109  -------------------- end include --------------------
+00001010                           110      INCLUDE     "calcJmpOffset.X68"
+00001010                           111  ; this is a helper method I made to simplify the jump table address calculation
+00001010                           112  calcJmpOffset
+00001010                           113      ; this method assumes A0 points to a jump table and D0 contains some number of bits of an instruction   
+00001010                           114      ; each jmp table entry is 6 bytes (2 for word opcode, 4 for jump address)
+00001010  C0FC 0006                115      MULU        #6, D0      *Form offset     
+00001014  4EB0 0000                116      JSR         0(A0, D0)   *Jump indirect with index
+00001018                           117      
+00001018  4E75                     118      RTS ; JSR loads the address of this RTS instruction into the SR so it eventually branches back
+00001018  4E75                     119  -------------------- end include --------------------
+0000101A                           120      INCLUDE     "calcDisplacement.X68"
+0000101A                           121  ; calculates displacement from branch instruction opcodes (hex)
+0000101A                           122  calcDisplacementAddress
+0000101A                           123      ; D4 holds 16-bit opcode
+0000101A  1004                     124      MOVE.B  D4,D0
+0000101C  4400                     125      NEG.B   D0
+0000101E  0280 000000FF            126      ANDI.L  #$FF,D0             ; clear just in case
+00001024                           127      ; If D0 is 0 here, that means the branch goes to a lower addr
+00001024                           128      ; This means the instruction uses an extension with the actual displacement
+00001024                           129      
+00001024                           130      ;SUB.W   D0,PROGRAM_COUNTER  ; this could be an EQU for an addr reg
+00001024  4E75                     131      RTS    
+00001026                           132  
+00001026                           133  -------------------- end include --------------------
+00001026                           134  
+00001026                           135  
+00001026                           136  
+00001026                           137  
+00001026                           138  
+00001026                           139  getOpcode
+00001026                           140      ; clear D0 just in case it has high order bits
+00001026  0280 00000000            141      ANDI.L  #$0,D0
+0000102C                           142      
+0000102C                           143      ; load the word and return
+0000102C  43F9 00001082            144      LEA     INSTR_OPCODE_WORD,A1
+00001032  3011                     145      MOVE.W  (A1),D0
+00001034  4E75                     146      RTS
+00001036                           147      
+00001036                           148  getFirstExt
+00001036  43F9 00001084            149      LEA     INSTR_EXT_1,A1
+0000103C  6000 0008                150      BRA     getExtension
+00001040                           151      
+00001040                           152  getSecondExt
+00001040  43F9 00001088            153      LEA     INSTR_EXT_2,A1
+00001046                           154      ; don't even need to branch lol
+00001046                           155  
+00001046                           156  getExtension
+00001046                           157      ; in any case we'll load D0 and return
+00001046  2011                     158      MOVE.L  (A1),D0
+00001048                           159      
+00001048                           160      ; check for null value so we don't waste instructions
+00001048                           161      ; this should work as a zero compare
+00001048  6700 0018                162      BEQ     getExtensionReturn
+0000104C                           163      
+0000104C                           164      ; check if the extension is a word
+0000104C  0C69 0000 0004           165      CMP.W   #0,4(A1)
+00001052  6600 000E                166      BNE     getExtensionReturn
+00001056                           167      
+00001056                           168      ; it is, so we need to account for byte order
+00001056                           169      ; it'd be faster to do this by hand but I'm lazy
+00001056                           170m     isolateBitsM    D0,#31,#16    
+00001056                           171m     ; ARGS SAME AS ABOVE, EXCEPT THEY're immediates or different regs
+00001056                 FALSE     172m     IFNE 3-3                       ;IF NOT 3 ARGUMENTS
+00001056                           173m     ENDC
+00001056  2000                     174m     MOVE.L      D0,D0
+00001058  123C 001F                175m     MOVE.B      #31,D1
+0000105C  143C 0010                176m     MOVE.B      #16,D2
+00001060  619E                     177m     BSR         ISOLATEBITS
+00001062                           178m     ENDM
+00001062                           179      ; same as D0 = D0 >> 16
+00001062                           180      
+00001062                           181  getExtensionReturn
+00001062  4E75                     182      RTS
+00001064                           183      
+00001064                           184  setOpcode
+00001064                           185      ; ensure there's nothing lurking in D0's upper word
+00001064  0280 0000FFFF            186      ANDI.L  #$FFFF,D0
+0000106A                           187      ; set the variable
+0000106A  33C0 00001082            188      MOVE.W  D0,(INSTR_OPCODE_WORD)
+00001070  4E75                     189      RTS
+00001072                           190      
+00001072                           191  setFirstExt
+00001072  23C0 00001084            192      MOVE.L  D0,(INSTR_EXT_1)
+00001078  4E75                     193      RTS
+0000107A                           194      
+0000107A                           195  setSecondExt
+0000107A  23C0 00001088            196      MOVE.L  D0,(INSTR_EXT_2)
+00001080  4E75                     197      RTS
+00001082                           198      
+00001082                           199  ; TODO: Macro for these setters
+00001082                           200  
+00001082                           201  INSTR_BYTES         DS.B    10  
+0000108C                           202  
+0000108C                           203  
+0000108C  =00001082                204  INSTR_OPCODE_WORD   EQU     INSTR_BYTES     
+0000108C                           205  
+0000108C  =00001084                206  INSTR_EXT_1         EQU     (INSTR_BYTES)+2 
+0000108C                           207  
+0000108C  =00001088                208  INSTR_EXT_2         EQU     (INSTR_BYTES)+6 
+0000108C                           209  
+0000108C                           210  
+0000108C                           211  
+0000108C                           212  
+0000108C                           213  invalidOpcode   
+0000108C                           214m     PRINT       <Error: Invalid opcode! >
+00002000                           215m     SECTION     TEXT
+00002000= 45 52 52 4F 52 3A 20     216  MSG_2    DC.B    'ERROR: INVALID OPCODE! '
+          49 4E 56 41 4C 49 44  
+          20 4F 50 43 4F 44 45  
+          21 20                 
+00002017                 FALSE     220m     IFARG    2
+00002017                           221m     ENDC
+00002017= 00                       222m     DC.B    0
+0000108C                           223m     SECTION     CODE
+0000108C  48E7 8040                224m     MOVEM.L     D0/A1,-(SP)
+00001090  43F8 2000                225m     LEA         MSG_2,A1
+00001094  103C 000E                226m     MOVE.B      #14,D0
+00001098  4E4F                     227m     TRAP        #15
+0000109A  4CDF 0201                228m     MOVEM.L     (SP)+,D0/A1
+0000109E                           229m     ENDM
+0000109E                           230m     PRINT       <(this instruction is not supported)>,ENDL
+00002018                           231m     SECTION     TEXT
+00002018= 28 54 48 49 53 20 49     232  MSG_3    DC.B    '(THIS INSTRUCTION IS NOT SUPPORTED)'
+          4E 53 54 52 55 43 54  
+          49 4F 4E 20 49 53 20  
+          4E 4F 54 20 53 55 50  
+          50 4F 52 54 45 44 29  
+0000203B                 TRUE      237m     IFARG    2
+0000203B                 TRUE      238m         IFC      'ENDL','ENDL'
+0000203B= 0D 0A                    239m             DC.B    $D,$A
+0000203D                           240m         ENDC
+0000203D                           241m     ENDC
+0000203D= 00                       242m     DC.B    0
+0000109E                           243m     SECTION     CODE
+0000109E  48E7 8040                244m     MOVEM.L     D0/A1,-(SP)
+000010A2  43F8 2018                245m     LEA         MSG_3,A1
+000010A6  103C 000E                246m     MOVE.B      #14,D0
+000010AA  4E4F                     247m     TRAP        #15
+000010AC  4CDF 0201                248m     MOVEM.L     (SP)+,D0/A1
+000010B0                           249m     ENDM
+000010B0  4E75                     250      RTS
+000010B2                           251      
+000010B2                           252  
+000010B2                           253  
+000010B2                           254  
+000010B2                           255  
+000010B2                           256  
+000010B2                           257  
+000010B2                           258  -------------------- end include --------------------
+000010B2                           259  ; might want to include branch displacement calc function here if I don't use it in instr identification
+000010B2                           260  parseInstructionMain: 
+000010B2                           261      ; I think this should parse the instructions by common patterns/formats
+000010B2                           262      ; For ex, many opcodes use bits 0-2 for their source arg, and bits 3-5 for the arg mode/type
+000010B2                           263      ; We could use a common method to parse this section
+000010B2                           264      ; Basically, findOpcodeMain deals with identifying the name. It sets a string or flag somewhere for us
+000010B2                           265      ; Based on this flag, we know the instruction's format
+000010B2                           266      
+000010B2  4E75                     267      RTS
+000010B4                           268      
+000010B4                           269  getSourceMode
+000010B4                           270m     isolateBitsM    D4,#5,#0
+000010B4                           271m     ; ARGS SAME AS ABOVE, EXCEPT THEY're immediates or different regs
+000010B4                 FALSE     272m     IFNE 3-3                       ;IF NOT 3 ARGUMENTS
+000010B4                           273m     ENDC
+000010B4  2004                     274m     MOVE.L      D4,D0
+000010B6  123C 0005                275m     MOVE.B      #5,D1
+000010BA  143C 0000                276m     MOVE.B      #0,D2
+000010BE  6100 FF40                277m     BSR         ISOLATEBITS
+000010C2                           278m     ENDM
+000010C2  41F9 000010F0            279      LEA             modeJmpTable,A0
+000010C8  4EF8 1010                280      JMP             calcJmpOffset
+000010CC  4E75                     281      RTS ; TODO: remove if this sub uses JMP, keep for JSR
+000010CE                           282      
+000010CE                           283  getDestMode
+000010CE                           284      
+000010CE  4E75                     285      RTS ; TODO: remove if this sub uses JMP, keep for JSR
+000010D0                           286      
+000010D0                           287  getSourceRegister
+000010D0                           288      ; typically used for printing, but also used for a jmp table index
+000010D0                           289m     isolateBitsM    D4,#2,#0
+000010D0                           290m     ; ARGS SAME AS ABOVE, EXCEPT THEY're immediates or different regs
+000010D0                 FALSE     291m     IFNE 3-3                       ;IF NOT 3 ARGUMENTS
+000010D0                           292m     ENDC
+000010D0  2004                     293m     MOVE.L      D4,D0
+000010D2  123C 0002                294m     MOVE.B      #2,D1
+000010D6  143C 0000                295m     MOVE.B      #0,D2
+000010DA  6100 FF24                296m     BSR         ISOLATEBITS
+000010DE                           297m     ENDM
+000010DE  4E75                     298      RTS
+000010E0                           299      
+000010E0                           300  getDestRegister
+000010E0                           301m     isolateBitsM    D4,#11,#9
+000010E0                           302m     ; ARGS SAME AS ABOVE, EXCEPT THEY're immediates or different regs
+000010E0                 FALSE     303m     IFNE 3-3                       ;IF NOT 3 ARGUMENTS
+000010E0                           304m     ENDC
+000010E0  2004                     305m     MOVE.L      D4,D0
+000010E2  123C 000B                306m     MOVE.B      #11,D1
+000010E6  143C 0009                307m     MOVE.B      #9,D2
+000010EA  6100 FF14                308m     BSR         ISOLATEBITS
+000010EE                           309m     ENDM
+000010EE  4E75                     310      RTS
+000010F0                           311      
+000010F0                           312  modeJmpTable
+000010F0                           313      ; jump table for argument mode
+000010F0                           314      ; NOP's are for padding so I can reuse calcJmpOffset
+000010F0  4E72 0000                315      STOP            #000
+000010F4  4E71                     316      NOP
+000010F6                           317      
+000010F6  4E72 0001                318      STOP            #001
+000010FA  4E71                     319      NOP
+000010FC                           320      
+000010FC  4E72 000A                321      STOP            #010
+00001100  4E71                     322      NOP
+00001102                           323      
+00001102  4E72 000B                324      STOP            #011
+00001106  4E71                     325      NOP
+00001108                           326      
+00001108  4E72 0064                327      STOP            #100
+0000110C  4E71                     328      NOP
+0000110E                           329      
+0000110E  4E72 0065                330      STOP            #101
+00001112  4E71                     331      NOP
+00001114                           332      
+00001114  4E72 006E                333      STOP            #110
+00001118  4E71                     334      NOP
+0000111A                           335      
+Line 336 ERROR: Undefined symbol
+0000111A  6100 ABFA                336      BSR             getRegister
+0000111E  41F9 00001128            337      LEA             modeJmpTable111,A0
+00001124  4EF8 1010                338      JMP             calcJmpOffset
+00001128                           339          
+00001128                           340      
+00001128                           341  modeJmpTable111
+00001128  4E72 0000                342      STOP            #000    ; Abs Short
+0000112C                           343      
+0000112C  4E72 0001                344      STOP            #001    ; Abs Short
+00001130                           345      
+00001130  4E72 000A                346      STOP            #010    ; PC w/ Displacement
+00001134                           347      
+00001134  4E72 0064                348      STOP            #100    ; Immediate
+00001138                           349      
+00001138                           350     
+00001138                           351  preDecPrint
+00001138                           352  
+00001138                           353  
+00001138                           354  postDecPrint
+00001138                           355      
+00001138                           356  printRegister
+00001138                           357      
+Line 358 WARNING: END directive missing, starting address not set
+
+1 error detected
+1 warning generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+CALCDISPLACEMENTADDRESS  101A
+CALCJMPOFFSET       1010
+CODE                0
+GETDESTMODE         10CE
+GETDESTREGISTER     10E0
+GETEXTENSION        1046
+GETEXTENSIONRETURN  1062
+GETFIRSTEXT         1036
+GETOPCODE           1026
+GETSECONDEXT        1040
+GETSOURCEMODE       10B4
+GETSOURCEREGISTER   10D0
+INSTR_BYTES         1082
+INSTR_EXT_1         1084
+INSTR_EXT_2         1088
+INSTR_OPCODE_WORD   1082
+INVALIDOPCODE       108C
+ISOLATEBITS         1000
+ISOLATEBITSM        321
+MODEJMPTABLE        10F0
+MODEJMPTABLE111     1128
+MSG_2               2000
+MSG_3               2018
+PARSEINSTRUCTIONMAIN  10B2
+POSTDECPRINT        1138
+PREDECPRINT         1138
+PRINT               0
+PRINTN              13E
+PRINTREGISTER       1138
+SETFIRSTEXT         1072
+SETOPCODE           1064
+SETSECONDEXT        107A
+TEXT                1

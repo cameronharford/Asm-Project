@@ -1,0 +1,359 @@
+00000000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 7/16/2020 5:03:46 PM
+
+00000000                             1  *   ORG         $2800
+00000000                             2      INCLUDE     "print.X68"
+00000000                             3          OPT     MEX
+00000000  =00000000                  4  CODE    EQU     0
+00000000  =00000001                  5  TEXT    EQU     1
+00000000                             6  
+00000000                             7      SECTION     TEXT
+00002000                             8      ORG         $2000
+00000000                             9      SECTION     CODE
+00001000                            10      ORG         $1000
+00001000                            11  
+00001000                            12  PRINT   MACRO
+00001000                            13      SECTION     TEXT
+00001000                            14  MSG\@    DC.B    '\1'
+00001000                            15      IFARG    2
+00001000                            16          IFC      '\2','ENDL'
+00001000                            17              DC.B    $D,$A
+00001000                            18          ENDC
+00001000                            19      ENDC
+00001000                            20      DC.B    0
+00001000                            21      SECTION     CODE
+00001000                            22      MOVEM.L     D0/A1,-(SP)
+00001000                            23      LEA         MSG\@,A1
+00001000                            24      MOVE.B      #14,D0
+00001000                            25      TRAP        #15
+00001000                            26      MOVEM.L     (SP)+,D0/A1
+00001000                            27      ENDM
+00001000                            28  
+00001000                            29  PRINTN    MACRO
+00001000                            30      SECTION     CODE
+00001000                            31      MOVEM.L     D0/D1,-(SP)
+00001000                            32      IFNC '\1','D1'          if some register other than D1
+00001000                            33          MOVE.L    \1,D1       put number to display in D1
+00001000                            34      ENDC
+00001000                            35      IFEQ NARG-2         ; for unsigned ints
+00001000                            36          MOVE.B  #15,D0
+00001000                            37          MOVE.B  \2,D2   ; arg 2 is the new num base (ex: #16)
+00001000                            38      ENDC
+00001000                            39      IFEQ NARG-1         ; for signed ints
+00001000                            40          MOVE.B  #3,D0
+00001000                            41      ENDC
+00001000                            42      TRAP    #15             display number in D1
+00001000                            43      MOVEM.L (SP)+,D0/D1
+00001000                            44      ENDM
+00001000                            45  
+00001000                            46  
+00001000                            47  
+00001000                            48  
+00001000                            49  
+00001000                            50  
+00001000                            51  
+00001000                            52  
+00001000                            53  
+00001000                            54  
+00001000                            55  -------------------- end include --------------------
+00001000                            56      INCLUDE     "isolateBits.X68"
+00001000                            57  isolateBits
+00001000                            58      ; D0 contains the number you'd like to isolate bits on
+00001000                            59      ; D1 contains the starting bit number, ranging from 31-0
+00001000                            60      ; D2 contains the stopping bit number, ranging from 30-0
+00001000                            61      
+00001000                            62      ; Save D3 before we overwrite it
+00001000  2F03                      63      MOVE.L      D3,-(SP)
+00001002                            64      
+00001002                            65      ; D3 = 31 - D1 
+00001002  761F                      66      MOVE.L      #31, D3
+00001004  9601                      67      SUB.B       D1, D3 
+00001006                            68  
+00001006                            69      ; D0 = D0 << D3
+00001006  E7A8                      70      LSL.L       D3, D0
+00001008                            71  
+00001008                            72      ; D3 = D3 + D2 
+00001008  D602                      73      ADD.B       D2, D3
+0000100A                            74  
+0000100A                            75      ; D0 = D0 >> D3
+0000100A  E6A8                      76      LSR.L       D3, D0
+0000100C                            77      
+0000100C                            78      ; Restore D3 then return
+0000100C  261F                      79      MOVE.L      (SP)+,D3
+0000100E  4E75                      80      RTS
+00001010                            81  
+00001010                            82  ; example call:
+00001010                            83  ;   MOVE.L      #$1234, D0
+00001010                            84  ;   MOVE.B      #11, D1
+00001010                            85  ;   MOVE.B      #8, D2
+00001010                            86  ;   BSR         isolateBits
+00001010                            87  ;
+00001010                            88  ; return from this call:
+00001010                            89  ;   D0 = 0x2
+00001010                            90  
+00001010                            91      
+00001010                            92  isolateBitsM    MACRO
+00001010                            93      ; args same as above, except they're immediates or different regs
+00001010                            94      IFNE NARG-3                       ;if not 3 arguments
+00001010                            95          FAIL ERROR, isolateBits requires 3 arguments
+00001010                            96          MEXIT
+00001010                            97      ENDC
+00001010                            98      MOVE.L      \1,D0
+00001010                            99      MOVE.B      \2,D1
+00001010                           100      MOVE.B      \3,D2
+00001010                           101      BSR         isolateBits
+00001010                           102      ENDM
+00001010                           103      
+00001010                           104  ; example call:
+00001010                           105  ;   isolateBitsM    #$1234,#11,#8
+00001010                           106  ;
+00001010                           107  ; same as the above example
+00001010                           108  ; returns D0 = 0x2
+00001010                           109  -------------------- end include --------------------
+00001010                           110      INCLUDE     "calcJmpOffset.X68"
+00001010                           111  ; this is a helper method I made to simplify the jump table address calculation
+00001010                           112  calcJmpOffset
+00001010                           113      ; this method assumes A0 points to a jump table and D0 contains some number of bits of an instruction   
+00001010                           114      ; each jmp table entry is 6 bytes (2 for word opcode, 4 for jump address)
+00001010  C0FC 0006                115      MULU        #6, D0      *Form offset     
+00001014  4EB0 0000                116      JSR         0(A0, D0)   *Jump indirect with index
+00001018                           117      
+00001018  4E75                     118      RTS ; JSR loads the address of this RTS instruction into the SR so it eventually branches back
+00001018  4E75                     119  -------------------- end include --------------------
+0000101A                           120      INCLUDE     "calcDisplacement.X68"
+0000101A                           121  ; calculates displacement from branch instruction opcodes (hex)
+0000101A                           122  calcDisplacementAddress
+0000101A                           123      ; D4 holds 16-bit opcode
+0000101A  1004                     124      MOVE.B  D4,D0
+0000101C  4400                     125      NEG.B   D0
+0000101E  0280 000000FF            126      ANDI.L  #$FF,D0             ; clear just in case
+00001024                           127      ;SUB.W   D0,PROGRAM_COUNTER  ; this could be an EQU for an addr reg
+00001024  4E75                     128      RTS    
+00001024  4E75                     129  -------------------- end include --------------------
+00001026                           130  
+00001026                           131  * Register usage key:
+00001026                           132  *   D0 = randomly used; can be freely modified
+00001026                           133  *   D1 = randomly used; can be freely modified
+00001026                           134  *   D2 = randomly used; can be freely modified
+00001026                           135  *   D3 = 
+00001026                           136  *   D4 = holds 16-bit opcode; can be modified if necessary
+00001026                           137  *   D5 = holds first extension for instruction, if it exists;
+00001026                           138  *        can be modified if necessary
+00001026                           139  *   D6 = holds other extension for instruction, if it exists;
+00001026                           140  *        can be modified if necessary
+00001026                           141  *   D7 = 
+00001026                           142  *   A0 =  
+00001026                           143  *   A1 = randomly used, typically holds a jump table address;
+00001026                           144  *        can be freely modified
+00001026                           145  *   A2 = 
+00001026                           146  *   A3 = 
+00001026                           147  *   A4 = 
+00001026                           148  *   A5 = 
+00001026                           149  *   A6 = 
+00001026                           150  *   A7 = stack pointer; DO NOT MODIFY
+00001026                           151  
+00001026                           152  
+00001026                           153  **************************************************************
+00001026                           154  * MISC NOTE:                                                 *
+00001026                           155  * Unlike registers, when accessing data from memory locations*
+00001026                           156  * or variables (which are just labels for program-allocated  *
+00001026                           157  * memory) programs use Big Endian byte order. Example:       *
+00001026                           158  *                                                            *
+00001026                           159  * $A000 contains the long $#12345678                         *
+00001026                           160  * D0, D1, and D2 are initially 0                             *
+00001026                           161  * after the following MOVE instructions                      *
+00001026                           162  *    MOVE.L  ($A000),D0                                      *
+00001026                           163  *    MOVE.W  ($A000),D1                                      *
+00001026                           164  *    MOVE.B  ($A000),D2                                      *
+00001026                           165  *                                                            *
+00001026                           166  * D0 = #$12345678                                            *
+00001026                           167  * D1 = #$1234     (NOT #$5678)                               *
+00001026                           168  * D2 = #$12       (NOT #$78)                                 *
+00001026                           169  *                                                            *
+00001026                           170  * while this may seem obvious when you're given a constant   *
+00001026                           171  * for a memory address like with $A000, it's important to    *
+00001026                           172  * remember this logic applies to your variables as well.     *
+00001026                           173  * When accessing the opcode extension variables INSTR_EXT_1  *
+00001026                           174  * and INSTR_EXT_2, keep this fact in mind.                   *
+00001026                           175  **************************************************************
+00001026                           176  
+00001026                           177  
+00001026                           178  ************************************************************
+00001026                           179  **        get methods for the instruction pointers        **
+00001026                           180  ************************************************************
+00001026                           181  getOpcode
+00001026                           182      ; clear D0 just in case it has high order bits
+00001026  0280 00000000            183      ANDI.L  #$0,D0
+0000102C                           184      
+0000102C                           185      ; load the word and return
+0000102C  43F9 00001082            186      LEA     INSTR_OPCODE_WORD,A1
+00001032  3011                     187      MOVE.W  (A1),D0
+00001034  4E75                     188      RTS
+00001036                           189      
+00001036                           190  getFirstExt
+00001036  43F9 00001084            191      LEA     INSTR_EXT_1,A1
+0000103C  6000 0008                192      BRA     getExtension
+00001040                           193      
+00001040                           194  getSecondExt
+00001040  43F9 00001088            195      LEA     INSTR_EXT_2,A1
+00001046                           196      ; don't even need to branch lol
+00001046                           197  
+00001046                           198  getExtension
+00001046                           199      ; in any case we'll load D0 and return
+00001046  2011                     200      MOVE.L  (A1),D0
+00001048                           201      
+00001048                           202      ; check for null value so we don't waste instructions
+00001048                           203      ; this should work as a zero compare
+00001048  6700 0018                204      BEQ     getExtensionReturn
+0000104C                           205      
+0000104C                           206      ; check if the extension is a word
+0000104C  0C69 0000 0004           207      CMP.W   #0,4(A1)
+00001052  6600 000E                208      BNE     getExtensionReturn
+00001056                           209      
+00001056                           210      ; it is, so we need to account for byte order
+00001056                           211      ; it'd be faster to do this by hand but I'm lazy
+00001056                           212m     isolateBitsM    D0,#31,#16    
+00001056                           213m     ; ARGS SAME AS ABOVE, EXCEPT THEY're immediates or different regs
+00001056                 FALSE     214m     IFNE 3-3                       ;IF NOT 3 ARGUMENTS
+00001056                           215m     ENDC
+00001056  2000                     216m     MOVE.L      D0,D0
+00001058  123C 001F                217m     MOVE.B      #31,D1
+0000105C  143C 0010                218m     MOVE.B      #16,D2
+00001060  619E                     219m     BSR         ISOLATEBITS
+00001062                           220m     ENDM
+00001062                           221      ; same as D0 = D0 >> 16
+00001062                           222      
+00001062                           223  getExtensionReturn
+00001062  4E75                     224      RTS
+00001064                           225      
+00001064                           226  ************************************************************
+00001064                           227  **        set methods for the instruction pointers        **
+00001064                           228  ************************************************************
+00001064                           229  setOpcode
+00001064                           230      ; ensure there's nothing lurking in D0's upper word
+00001064  0280 0000FFFF            231      ANDI.L  #$FFFF,D0
+0000106A                           232      ; set the variable
+0000106A  33C0 00001082            233      MOVE.W  D0,(INSTR_OPCODE_WORD)
+00001070  4E75                     234      RTS
+00001072                           235      
+00001072                           236  setFirstExt
+00001072  23C0 00001084            237      MOVE.L  D0,(INSTR_EXT_1)
+00001078  4E75                     238      RTS
+0000107A                           239      
+0000107A                           240  setSecondExt
+0000107A  23C0 00001088            241      MOVE.L  D0,(INSTR_EXT_2)
+00001080  4E75                     242      RTS
+00001082                           243      
+00001082                           244  ; TODO: Macro for these setters
+00001082                           245  
+00001082                           246  ************************************************************
+00001082                           247  **         variable for storing instruction bytes         **
+00001082                           248  ************************************************************
+00001082                           249  INSTR_BYTES         DS.B    10  
+0000108C                           250  * 10 bytes (80 bits) is the max we need I think.
+0000108C                           251  * 2 for opcode, 4 for long extension, 4 for long extension.
+0000108C                           252  * long extensions are in case we have 2 absolute longs such
+0000108C                           253  * as for:  MOVE.L  ($10001234),($10005678)
+0000108C                           254  
+0000108C                           255  
+0000108C                           256  ************************************************************
+0000108C                           257  **         instruction reference pointers/offsets         **
+0000108C                           258  ************************************************************                                
+0000108C  =00001082                259  INSTR_OPCODE_WORD   EQU     INSTR_BYTES     
+0000108C                           260  * used for the 16-bit opcode
+0000108C                           261  
+0000108C  =00001084                262  INSTR_EXT_1         EQU     (INSTR_BYTES)+2 
+0000108C                           263  * used if instruction has an extension.
+0000108C                           264  * space is allocated for a long, but may only have a byte or
+0000108C                           265  * word stored, depending on the instruction we're reading.
+0000108C                           266  
+0000108C  =00001088                267  INSTR_EXT_2         EQU     (INSTR_BYTES)+6 
+0000108C                           268  * used if instruction has a second extension
+0000108C                           269  * conditions are same as first extension
+0000108C                           270  * if this exists, it's always one of two things:
+0000108C                           271  * 1. a destination address (long)
+0000108C                           272  * 2. a displacement offset (word)
+0000108C                           273  
+0000108C                           274  
+0000108C                           275  
+0000108C                           276  
+0000108C                           277  ************************************************************
+0000108C                           278  **              error print-outs for program              **
+0000108C                           279  ************************************************************ 
+0000108C                           280  invalidOpcode   
+0000108C                           281m     PRINT       <Error: Invalid opcode! >
+00002000                           282m     SECTION     TEXT
+00002000= 45 52 52 4F 52 3A 20     283  MSG_2    DC.B    'ERROR: INVALID OPCODE! '
+          49 4E 56 41 4C 49 44  
+          20 4F 50 43 4F 44 45  
+          21 20                 
+00002017                 FALSE     287m     IFARG    2
+00002017                           288m     ENDC
+00002017= 00                       289m     DC.B    0
+0000108C                           290m     SECTION     CODE
+0000108C  48E7 8040                291m     MOVEM.L     D0/A1,-(SP)
+00001090  43F8 2000                292m     LEA         MSG_2,A1
+00001094  103C 000E                293m     MOVE.B      #14,D0
+00001098  4E4F                     294m     TRAP        #15
+0000109A  4CDF 0201                295m     MOVEM.L     (SP)+,D0/A1
+0000109E                           296m     ENDM
+0000109E                           297m     PRINT       <(this instruction is not supported)>,ENDL
+00002018                           298m     SECTION     TEXT
+00002018= 28 54 48 49 53 20 49     299  MSG_3    DC.B    '(THIS INSTRUCTION IS NOT SUPPORTED)'
+          4E 53 54 52 55 43 54  
+          49 4F 4E 20 49 53 20  
+          4E 4F 54 20 53 55 50  
+          50 4F 52 54 45 44 29  
+0000203B                 TRUE      304m     IFARG    2
+0000203B                 TRUE      305m         IFC      'ENDL','ENDL'
+0000203B= 0D 0A                    306m             DC.B    $D,$A
+0000203D                           307m         ENDC
+0000203D                           308m     ENDC
+0000203D= 00                       309m     DC.B    0
+0000109E                           310m     SECTION     CODE
+0000109E  48E7 8040                311m     MOVEM.L     D0/A1,-(SP)
+000010A2  43F8 2018                312m     LEA         MSG_3,A1
+000010A6  103C 000E                313m     MOVE.B      #14,D0
+000010AA  4E4F                     314m     TRAP        #15
+000010AC  4CDF 0201                315m     MOVEM.L     (SP)+,D0/A1
+000010B0                           316m     ENDM
+000010B0  4E75                     317      RTS
+000010B2                           318      
+000010B2                           319  
+000010B2                           320  
+000010B2                           321  
+000010B2                           322  
+000010B2                           323  
+Line 324 WARNING: END directive missing, starting address not set
+
+No errors detected
+1 warning generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+CALCDISPLACEMENTADDRESS  101A
+CALCJMPOFFSET       1010
+CODE                0
+GETEXTENSION        1046
+GETEXTENSIONRETURN  1062
+GETFIRSTEXT         1036
+GETOPCODE           1026
+GETSECONDEXT        1040
+INSTR_BYTES         1082
+INSTR_EXT_1         1084
+INSTR_EXT_2         1088
+INSTR_OPCODE_WORD   1082
+INVALIDOPCODE       108C
+ISOLATEBITS         1000
+ISOLATEBITSM        321
+MSG_2               2000
+MSG_3               2018
+PRINT               0
+PRINTN              13E
+SETFIRSTEXT         1072
+SETOPCODE           1064
+SETSECONDEXT        107A
+TEXT                1

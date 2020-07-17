@@ -1,8 +1,6 @@
 *	ORG         $2800
-	INCLUDE     "print.X68"
     INCLUDE		"isolateBits.X68"
 	INCLUDE		"calcJmpOffset.X68"
-	INCLUDE     "calcDisplacement.X68"
 
 * Register usage key:
 *   D0 = randomly used; can be freely modified
@@ -141,15 +139,6 @@ INSTR_EXT_2         EQU     (INSTR_BYTES)+6
 
 
 
-
-************************************************************
-**              error print-outs for program              **
-************************************************************ 
-invalidOpcode	
-	PRINT       <Error: Invalid opcode! >
-	PRINT       <(this instruction is not supported)>,ENDL
-	RTS
-	
 
 
 

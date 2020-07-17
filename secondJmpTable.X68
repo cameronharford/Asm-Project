@@ -3,87 +3,72 @@
 ; note: not all instructions use one of these jump tables. Some like moveQ only require the first table, while others don't have consistent 11-9 bit values to allow a jump table to differentiate
 *    ORG         $2000
 
-; 0000
-jmpTable0000
-	STOP		#$0000 *JMP			sub_ORI_to_CCR
-	STOP		#$0000 *JMP			sub_ORI_to_SR
-	STOP		#$0000 *JMP			sub_ORI
-	STOP		#$0000 *JMP			sub_ANDI_to_CCR
-	STOP		#$0000 *JMP			sub_ANDI_to_SR
-	STOP		#$0000 *JMP			sub_ANDI
-	STOP		#$0000 *JMP			sub_SUBI
-	STOP		#$0000 *JMP			sub_ADDI
-	STOP		#$0000 *JMP			sub_EORI_to_CCR
-	STOP		#$0000 *JMP			sub_EORI_to_SR
-	STOP		#$0000 *JMP			sub_EORI
-	STOP		#$0000 *JMP			sub_CMPI
-	STOP		#$0000 *JMP			sub_BTST
-	STOP		#$0000 *JMP			sub_BCHG
-	STOP		#$0000 *JMP			sub_BCLR
-	STOP		#$0000 *JMP			sub_BSET
-	STOP		#$0000 *JMP			sub_BTST ; somehow different
-	STOP		#$0000 *JMP			sub_BCHG ; somehow different
-	STOP		#$0000 *JMP			sub_BCLR ; somehow different
-	STOP		#$0000 *JMP			sub_BSET ; somehow different
-	STOP		#$0000 *JMP			sub_MOVEP
+; STOP #$DEAD means we don't need to interpret this instruction for the project
+; TODO: simplify unrequired jump tables
 	
 ; 0100
 jmpTable0100
-	STOP		#$0100 *JMP			sub_MOVE_from_SR
-	STOP		#$0100 *JMP			sub_MOVE_to_CCR
-	STOP		#$0100 *JMP			sub_MOVE_to_SR
-	STOP		#$0100 *JMP			sub_NEGX
-	STOP		#$0100 *JMP			sub_CLR
-	STOP		#$0100 *JMP			sub_NEG
+	STOP		#$0100 *JMP			sub_MOVE_from_SR * not required
+	STOP		#$0100 *JMP			sub_MOVE_to_CCR * not required
+	STOP		#$0100 *JMP			sub_MOVE_to_SR * not required
+	STOP		#$DEAD *JMP			sub_NEGX * not required
+	STOP		#$DEAD *JMP			sub_CLR * not required
+	STOP		#$DEAD *JMP			sub_NEG * not required
+	
 	STOP		#$0100 *JMP			sub_NOT
-	STOP		#$0100 *JMP			sub_EXT
-	STOP		#$0100 *JMP			sub_NBCD
-	STOP		#$0100 *JMP			sub_SWAP
-	STOP		#$0100 *JMP			sub_PEA
-	STOP		#$0100 *JMP			sub_ILLEGAL
-	STOP		#$0100 *JMP			sub_TAS
-	STOP		#$0100 *JMP			sub_TST
-	STOP		#$0100 *JMP			sub_TRAP
-	STOP		#$0100 *JMP			sub_LINK
-	STOP		#$0100 *JMP			sub_UNLK
-	STOP		#$0100 *JMP			sub_MOVE_USP
-	STOP		#$0100 *JMP			sub_RESET
+	
+	STOP		#$DEAD *JMP			sub_EXT * not required
+	STOP		#$DEAD *JMP			sub_NBCD * not required
+	STOP		#$DEAD *JMP			sub_SWAP * not required
+	STOP		#$DEAD *JMP			sub_PEA * not required
+	STOP		#$DEAD *JMP			sub_ILLEGAL * not required
+	STOP		#$DEAD *JMP			sub_TAS * not required
+	STOP		#$DEAD *JMP			sub_TST * not required
+	STOP		#$DEAD *JMP			sub_TRAP * not required
+	STOP		#$DEAD *JMP			sub_LINK * not required
+	STOP		#$DEAD *JMP			sub_UNLK * not required
+	STOP		#$DEAD *JMP			sub_MOVE_USP * not required
+	STOP		#$DEAD *JMP			sub_RESET * not required
+	
 	STOP		#$0100 *JMP			sub_NOP
-	STOP		#$0100 *JMP			sub_STOP
-	STOP		#$0100 *JMP			sub_RTE
+	
+	STOP		#$DEAD *JMP			sub_STOP * not required
+	STOP		#$DEAD *JMP			sub_RTE * not required
+	
 	STOP		#$0100 *JMP			sub_RTS
-	STOP		#$0100 *JMP			sub_TRAPV
-	STOP		#$0100 *JMP			sub_RTR
+	
+	STOP		#$DEAD *JMP			sub_TRAPV * not required
+	STOP		#$DEAD *JMP			sub_RTR * not required
+	
 	STOP		#$0100 *JMP			sub_JSR
-	STOP		#$0100 *JMP			sub_JMP
+	
+	STOP		#$DEAD *JMP			sub_JMP * not required
+	
 	STOP		#$0100 *JMP			sub_MOVEM
 	STOP		#$0100 *JMP			sub_LEA
-	STOP		#$0100 *JMP			sub_CHK
 	
-; 0101
-jmpTable0101
-	STOP		#$0101 *JMP			sub_ADDQ
-	STOP		#$0101 *JMP			sub_SUBQ
-	STOP		#$0101 *JMP			sub_Scc
-	STOP		#$0101 *JMP			sub_DBcc
+	STOP		#$DEAD *JMP			sub_CHK * not required
 	
 ; 0110
 jmpTable0110
-	; done
 	STOP		#$0110 *JMP			sub_BRA
-	STOP		#$0110 *JMP			sub_BSR
-	STOP		#$0110 *JMP			sub_BHI
-	STOP		#$0110 *JMP			sub_BLS
-	STOP		#$0110 *JMP			sub_BCC
-	STOP		#$0110 *JMP			sub_BCS
-	STOP		#$0110 *JMP			sub_BNE
+	
+	JMP			invalidOpcode       * BSR not required
+	JMP			invalidOpcode       * BHI not required
+	JMP			invalidOpcode       * BLS not required
+	JMP			invalidOpcode       * BCC not required
+	JMP			invalidOpcode       * BCS not required
+	JMP			invalidOpcode       * BNE not required
+	
 	STOP		#$0110 *JMP			sub_BEQ
-	STOP		#$0110 *JMP			sub_BVC
-	STOP		#$0110 *JMP			sub_BVS
-	STOP		#$0110 *JMP			sub_BPL
-	STOP		#$0110 *JMP			sub_BMI
-	STOP		#$0110 *JMP			sub_BGE
-	STOP		#$0110 *JMP			sub_BLT
+	
+	JMP			invalidOpcode       * BVC not required
+	JMP			invalidOpcode       * BVS not required
+	JMP			invalidOpcode       * BPL not required
+	JMP			invalidOpcode       * BMI not required
+	JMP			invalidOpcode       * BGE not required
+	JMP			invalidOpcode       * BLT not required
+	
 	STOP		#$0110 *JMP			sub_BGT
 	STOP		#$0110 *JMP			sub_BLE
 	
@@ -91,45 +76,64 @@ jmpTable0110
 ; 1000
 jmpTable1000
 	STOP		#$1000 *JMP			sub_DIVU
-	STOP		#$1000 *JMP			sub_DIVS
-	STOP		#$1000 *JMP			sub_SBCD
-	STOP		#$1000 *JMP			sub_OR
 	
-; 1001
-jmpTable1001
-	STOP		#$1001 *JMP			sub_SUB
-	STOP		#$1001 *JMP			sub_SUBX
-	STOP		#$1001 *JMP			sub_SUBA
-	
-; 1011
-jmpTable1011
-	STOP		#$1011 *JMP			sub_EOR
-	STOP		#$1011 *JMP			sub_CMPM
-	STOP		#$1011 *JMP			sub_CMP
-	STOP		#$1011 *JMP			sub_CMPA
+	STOP		#$DEAD *JMP			sub_DIVS * not required
+	STOP		#$DEAD *JMP			sub_SBCD * not required
+	STOP		#$DEAD *JMP			sub_OR * not required
 	
 ; 1100
 jmpTable1100
-	STOP		#$1100 *JMP			sub_MULU
+	STOP		#$DEAD *JMP			sub_MULU * not required
+	
 	STOP		#$1100 *JMP			sub_MULS
-	STOP		#$1100 *JMP			sub_ABCD
-	STOP		#$1100 *JMP			sub_EXG
+	
+	STOP		#$DEAD *JMP			sub_ABCD * not required
+	STOP		#$DEAD *JMP			sub_EXG * not required
+	
 	STOP		#$1100 *JMP			sub_AND
 	
 ; 1101
 jmpTable1101
 	STOP		#$1101 *JMP			sub_ADD
-	STOP		#$1101 *JMP			sub_ADDX
-	STOP		#$1101 *JMP			sub_ADDA
+	STOP		#$DEAD *JMP			sub_ADDX * not required
+	STOP		#$DEAD *JMP			sub_ADDA * not required
 	
 ; 1110
 jmpTable1110
 	STOP		#$1110 *JMP			sub_ASd ; for ASR/ASL
 	STOP		#$1110 *JMP			sub_LSd ; for LSR/LSL
-	STOP		#$1110 *JMP			sub_ROXd ; for ROXR & ROXL
+	STOP		#$DEAD *JMP			sub_ROXd * not required
 	STOP		#$1110 *JMP			sub_
 	
 *	END         jmpTable0000
+
+sub0100_000
+; required: LEA
+; invalid: MOVE from SR, NEGX, (possibly) CHK
+
+sub0100_001
+; required: 
+; invalid: 
+
+sub0100_010
+; required: 
+; invalid: 
+
+sub0100_100
+; required: 
+; invalid: 
+
+sub0100_101
+; required: 
+; invalid: 
+
+sub0100_110
+; required: 
+; invalid: 
+
+sub0100_111
+; required: RTS,JSR,LEA (if dest is A7)
+; invalid: 
 
 *~Font name~Courier New~
 *~Font size~10~
