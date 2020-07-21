@@ -34,6 +34,16 @@ MSG\@    DC.B    '\1'
     MOVEM.L     (SP)+,D0/A1
     ENDM
 
+* debug prints
+DEBUG   equ   1             set to 1 to include debug code
+
+DEBUG_PRINT MACRO
+    IFNE DEBUG
+        PRINT   \1,\2
+    ENDC
+    ENDM
+
+
 * print the number
 PRINTN    MACRO
     SECTION     CODE
@@ -64,6 +74,10 @@ PRINTN    MACRO
 *
 *    SIMHALT                 Halt the program
 *    END     START
+
+
+
+
 
 
 

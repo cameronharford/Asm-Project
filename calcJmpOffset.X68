@@ -3,6 +3,8 @@ calcJmpOffset
 	; this method assumes A0 points to a jump table and D0 contains some number of bits of an instruction   
     ; each jmp table entry is 6 bytes (2 for word opcode, 4 for jump address)
     MULU        #6, D0     	*Form offset     
-    JSR         0(A0, D0)   *Jump indirect with index
-	
-    RTS ; JSR loads the address of this RTS instruction into the SR so it eventually branches back
+    JMP         0(A0, D0)   *Jump indirect with index
+*~Font name~Courier New~
+*~Font size~10~
+*~Tab type~1~
+*~Tab size~4~

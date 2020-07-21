@@ -1,15 +1,17 @@
 *	ORG         $2800
+
 	INCLUDE     "print.X68"
     INCLUDE		"isolateBits.X68"
 	INCLUDE		"calcJmpOffset.X68"
 	INCLUDE     "calcDisplacement.X68"
+	
 
 * Register usage key:
 *   D0 = randomly used; can be freely modified
 *   D1 = randomly used; can be freely modified
 *   D2 = randomly used; can be freely modified
 *   D3 = 
-*   D4 = holds 16-bit opcode; can be modified if necessary
+*   D4 = holds 16-bit opcode; ask before modifying
 *   D5 = holds first extension for instruction, if it exists;
 *        can be modified if necessary
 *   D6 = holds other extension for instruction, if it exists;
@@ -140,6 +142,14 @@ INSTR_EXT_2         EQU     (INSTR_BYTES)+6
 * 2. a displacement offset (word)
 
 
+getOpcodeSize
+    ; returns bits 7-6 of an opcode, which is usually size
+    ; possible returns: 00 - .B
+    ;                   01 - .W
+    ;                   10 - .L
+    ;                   11 - special case
+    isolateBitsM    D4,#7,#6
+    RTS
 
 
 ************************************************************
@@ -148,13 +158,10 @@ INSTR_EXT_2         EQU     (INSTR_BYTES)+6
 invalidOpcode	
 	PRINT       <Error: Invalid opcode! >
 	PRINT       <(this instruction is not supported)>,ENDL
-	RTS
-	
+	ILLEGAL
+*	STOP        #$DEAD
 
-
-
-
-
+; <instr_name>.<instr_size>
 
 *~Font name~Courier New~
 *~Font size~10~

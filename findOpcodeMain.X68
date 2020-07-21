@@ -1,21 +1,16 @@
-	INCLUDE		"firstJmpTable.X68"
+	INCLUDE		"identityJmpTable.X68"
 
 findOpcodeMain: 
     ; D0 contains the first 16 bits of an instruction already
-    ; D1 is used to hold num bits to right shift (12)
 	
 	; save instruction to D4
 	MOVE		D0, D4
 	
 	; trim down bits so only 15-12 remain and are shifted to 3-0
-	MOVE.B		#15, D1
-	MOVE.B		#12, D2
-	
-	; bitStart = 15, bitEnd = 12
-	BSR			isolateBits
-	
+	isolateBitsM    D0,#15,#12
+
 	; load first jump table address into A0
-    LEA         firstJmpTable, A0
+    LEA         firstJmpTable,A0
 	
 	; get an offset of the first jump table to branch to, then jump there
 	BSR 		calcJmpOffset
@@ -32,6 +27,8 @@ INSTR_ARG_1_DATA	DC.L	0	; 1 = some number, 2/3 = ptr to data/address string, 4 =
 
 INSTR_ARG_2_TYPE	DC.B	1	;
 INSTR_ARG_2_DATA	DC.L	0	;
+
+
 
 
 *~Font name~Courier New~
