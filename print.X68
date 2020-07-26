@@ -6,6 +6,8 @@
 * Macro definitions should be placed at the top of the source file.
 * Dec-25-2012 by CK, Uses SIMHALT
 *-----------------------------------------------------------
+CODE_LOC
+
         OPT     MEX
 CODE    EQU     0
 TEXT    EQU     1
@@ -13,7 +15,8 @@ TEXT    EQU     1
     SECTION     TEXT
     ORG         $2000
     SECTION     CODE
-    ORG         $1000
+    ORG         CODE_LOC
+*    ORG         $1000
 
 * print the text string
 * use ENDL as second argument to add return and linefeed
@@ -74,6 +77,7 @@ PRINTN    MACRO
 *
 *    SIMHALT                 Halt the program
 *    END     START
+
 
 
 

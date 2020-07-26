@@ -6,6 +6,7 @@ parseInstructionMain:
     ; We could use a common method to parse this section
     ; Basically, findOpcodeMain deals with identifying the name. It sets a string or flag somewhere for us
     ; Based on this flag, we know the instruction's format
+    ; Because args could be illegal, we print instruction name in this method after confirming legal args
     
 	RTS
 
@@ -13,12 +14,31 @@ parseInstructionMain:
 ; Branches
 ; No args (NOP, RTS)
 ; Source arg
-; Source and dest args (
+;   -arg value within opcode
+;   -arg value appended as word/long extension
+; Source and dest args
+;   -arg values within opcode
+;   -arg values appended as word/long extensions
+
+; source arg format is almost universal, exceptions being branching, RTS, NOP
+
+instrTypeOne
+; for ADD, SUB, AND
+    
+
+
+instrTypeTwo
 	
+instrTypeThree
+
+instrTypeFour
+
+
+
 getSourceMode
-    isolateBitsM    D4,#5,#0
-    LEA             modeJmpTable,A0
-    JMP             calcJmpOffset
+    isoBitsM    D4,#5,#3
+    LEA         modeJmpTable,A0
+    JMP         calcJmpOffset
     RTS ; TODO: remove if this sub uses JMP, keep for JSR
     
 getDestMode
@@ -27,91 +47,118 @@ getDestMode
     
 getSourceRegister
     ; typically used for printing, but also used for a jmp table index
-    isolateBitsM    D4,#2,#0
-    MOVE.B          D0,D3
+    isoBitsM    D4,#2,#0
+    MOVE.B      D0,D3
     RTS
     
 getDestRegister
-    isolateBitsM    D4,#11,#9
+    isoBitsM    D4,#11,#9
+    MOVE.B      D0,D3
     RTS
     
 modeJmpTable
     ; jump table for argument mode
     ; NOP's are for padding so I can reuse calcJmpOffset
-    STOP            #000
+    STOP    #000    ; Data Reg, D0-D7
     NOP
     
-    STOP            #001
+    STOP    #001    ; Addr Reg, A0-A7
     NOP
     
-    STOP            #010
+    STOP    #010    ; Address, (A0)-(A7)
     NOP
     
-    STOP            #011
+    STOP    #011    ; Address w/ Postinc, (An)+
     NOP
     
-    STOP            #100
+    STOP    #100    ; Address w/ Predec, -(An)
     NOP
     
-    STOP            #101
+    STOP    #101    ; Address w/ Displacement, (d16,An,Xn)
     NOP
     
-    STOP            #110
+    STOP    #110    ; Address w/ Index (d8,An,Xn)
     NOP
     
     ; case 111
-    BSR             getRegister
-    LEA             modeJmpTable111,A0
-    JMP             calcJmpOffset
+    BSR     getRegister
+    LEA     modeJmpTable111,A0
+    JMP     calcJmpOffset
         
     
 modeJmpTable111
-    STOP            #000    ; Abs Short
+; do all of these modes require an extension?
+; these cases do: 0,1,100
+    STOP    #000    ; Abs Short
     NOP
     
-    STOP            #001    ; Abs Short
+    STOP    #001    ; Abs Long
     NOP
     
-    STOP            #010    ; PC w/ Displacement
+    STOP    #010    ; PC w/ Displacement
+    ; illegal for MOVE, 
     NOP
     
-    STOP            #100    ; Immediate
+    STOP    #010    ; PC w/ Index
+    ; illegal for MOVE, 
     NOP
+    
+    STOP    #100    ; Immediate
+    ; illegal for MOVE (dest), ADD, 
+    ; check if instr is ADD, SUB, AND b/c that would be illegal
+    NOP
+    
+    ; there are no valid cases for 101-111 so opcode is universally illegal
+    ; 101
+    NOP
+    NOP
+    NOP
+    ; 110
+    NOP
+    NOP
+    NOP
+    ; 111
+    JMP         invalidOpcode ; should I instead print out illegal args?
    
 
 printReg
 ; TODO
     ; idea for logic:
     ;
-    CMP.B           #0,D3
-    BNE             
-   
-printRegD
+    CMP.B   #0,D3
+    BNE     
 
-   
+printRegD
+    PRINTN  #$D,#16
+    PRINTN  
+
 printRegA
 ; TODO
-    PRINTN          #$A,#16
+    PRINTN  #$A,#16
     ; PRINTN is cleaner, so use it for numbers like this if possible
     BSR             
    
 printAddress
 ; TODO
-    PRINT           <(>
-    JSR             printRegA
-    PRINT           <(>
+    PRINT   <(>
+    BSR     printRegA
+    PRINT   <)>
    
 printPreDec
 ; TODO
-    PRINT           <->
-    BSR             printAddress
-    
+    PRINT   <->
+    BSR     printAddress    
 
 printPostInc
 ; TODO
+    BSR     printAddress
+    PRINT   <+>
 
 printImmediate
 ; TODO
+; should I print as decimal or hex?
+
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

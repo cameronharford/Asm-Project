@@ -67,7 +67,7 @@ code0100
     BEQ         sub_rts
     
     ; JSR has 6 constant bits so it's easy to check
-    isolateBitsM    D4,#11,#6
+    isoBitsM    D4,#11,#6
     MOVE.B      D0,D1
     CMP.B       #%111010,D0
     BEQ         sub_jsr
@@ -76,8 +76,8 @@ code0100
     ; let's check for them specifically before the other instructions
     ; I should also check for MOVEM if possible due to variable bit 10
     
-    ; isolateBitsM    D4,#8,#6
-    ; since we already have bits 11-6 in D0 we don't need to call isolateBitsM again
+    ; isoBitsM    D4,#8,#6
+    ; since we already have bits 11-6 in D0 we don't need to call isoBitsM again
     ANDI.B          #%111,D0
     CMP.B           #%110,D0
     BEQ             invalidOpcode       ; CHK 8-6 is 110 or 6
@@ -85,7 +85,7 @@ code0100
     
 
     ; now check for MOVEM
-    isolateBitsM    D4,#11,#7
+    isoBitsM    D4,#11,#7
     ; null bit 10 since it's not constant for MOVEM
     ANDI.B      #%10111,D0
     CMP.B       #%10001,D0
@@ -95,7 +95,7 @@ code0100
     EORI.B      #%100111,D1
     CMP.B       #%111100,D1
     BLE         invalidOpcode
-    ; NOT bits 11-6 XOR 100111 is largest value within 0100 section
+    ; NOT bits 11-6 XOR'd by 100111 is largest value within 0100 section
     ; possible values for NOT: 111111, 111110, 111101
     ; so by this point, any instruction less than this is invalid
     
@@ -129,7 +129,7 @@ sub_lea
 ************************************************************
 branchIdentify  
 *	ILLEGAL		; as a test breakpoint
-	isolateBitsM    D4,#11,#8
+	isoBitsM    D4,#11,#8
 	LEA         branchJmpTable,A0  
 	
 	; BSR so we can return here to calc displacement
@@ -194,7 +194,7 @@ code1000
 	; DIVU is the only opcode we care about here 
 	; DIVU: bits 8-6 are always 011
 	; no other 1000 opcode can have 8-6 as 011 so this is the only check we need
-	isolateBitsM    D4,#8,#6
+	isoBitsM    D4,#8,#6
 	CMP.W           #%011,D0
 	BNE             invalidOpcode
 	; we know the input is DIVU, so do something now....
@@ -229,15 +229,15 @@ code1100
     
 	; ABCD: bits 8-4 are always 10000
 	; EXG: bits 8-4 are always 1__00
-	isolateBitsM    D4,#8,#4
+	isoBitsM    D4,#8,#4
 	ANDI.B          #%10011,D0
 	CMP.B           #%10000,D0
 	; this check and branch takes care of ABCD and EXG
-	; potential false positives here
+	; TODO: test for false positives here
 	BEQ             invalidOpcode
 		
 	; MULS: bit 8 is always 1 vs MULU where it's always 0
-	isolateBitsM    D4,#8,#6
+	isoBitsM    D4,#8,#6
 	CMP.B   #%011,D0
 	BEQ     invalidOpcode
 	CMP.B   #%111,D0
@@ -273,8 +273,8 @@ addIdentify
 addSubHelper
 *    The following should work but is probably inefficient    
     ; ADDA/SUBA check
-    isolateBitsM    D4,#7,#6
-    CMP.B           #3,D0
+    isoBitsM    D4,#7,#6
+    CMP.B           #%11,D0
     BEQ             invalidOpcode
     
     ; ADDX/SUBX check
@@ -298,11 +298,11 @@ shiftIdentify
     BNE         typeTwo
 typeOne
     ; for type one, we need to check bits 10-9
-    isolateBitsM    D4,#10,#9
+    isoBitsM    D4,#10,#9
     BRA         calcJmpOffset
 typeTwo
     ; type two checks bits 4-3
-    isolateBitsM    D4,#4,#3
+    isoBitsM    D4,#4,#3
     BRA         calcJmpOffset    
     STOP        #$2700
 	
@@ -322,6 +322,8 @@ sub_lsd
     STOP        #$1110
 
 *	END         firstJmpTable
+
+
 
 
 

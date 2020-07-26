@@ -188,6 +188,7 @@ trapTest
     RUN_TRAP    #7
     NOP
     RUN_TRAP    #2
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
