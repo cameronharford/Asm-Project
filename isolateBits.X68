@@ -34,7 +34,7 @@ isolateBits
 
 	
 *	OPT         MEX
-isolateBitsM    MACRO
+isoBitsM        MACRO
     ; args same as above, except they're immediates or different regs
     IFNE NARG-3                       ;if not 3 arguments
         FAIL ERROR, isolateBits requires 3 arguments
@@ -47,10 +47,11 @@ isolateBitsM    MACRO
     ENDM
     
 ; example call:
-;   isolateBitsM    #$1234,#11,#8
+;   isoBitsM    #$1234,#11,#8
 ;
 ; same as the above example
 ; returns D0 = 0x2
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

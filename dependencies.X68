@@ -58,36 +58,36 @@
 ************************************************************
 getOpcode
     ; clear D0 just in case it has high order bits
-    ANDI.L  #$0,D0
+    CLR.L           D0
     
     ; load the word and return
-    LEA     INSTR_OPCODE_WORD,A1
-    MOVE.W  (A1),D0
+    LEA             INSTR_OPCODE_WORD,A1
+    MOVE.W          (A1),D0
     RTS
     
 getFirstExt
-    LEA     INSTR_EXT_1,A1
-    BRA     getExtension
+    LEA             INSTR_EXT_1,A1
+    BRA             getExtension
     
 getSecondExt
-    LEA     INSTR_EXT_2,A1
+    LEA             INSTR_EXT_2,A1
     ; don't even need to branch lol
 
 getExtension
     ; in any case we'll load D0 and return
-    MOVE.L  (A1),D0
+    MOVE.L          (A1),D0
     
     ; check for null value so we don't waste instructions
     ; this should work as a zero compare
-    BEQ     getExtensionReturn
+    BEQ             getExtensionReturn
     
     ; check if the extension is a word
-    CMP.W   #0,4(A1)
-    BNE     getExtensionReturn
+    CMP.W           #0,4(A1)
+    BNE             getExtensionReturn
     
     ; it is, so we need to account for byte order
     ; it'd be faster to do this by hand but I'm lazy
-    isolateBitsM    D0,#31,#16    
+    isoBitsM        D0,#31,#16    
     ; same as D0 = D0 >> 16
     
 getExtensionReturn
@@ -98,17 +98,17 @@ getExtensionReturn
 ************************************************************
 setOpcode
     ; ensure there's nothing lurking in D0's upper word
-    ANDI.L  #$FFFF,D0
+    ANDI.L          #$FFFF,D0
     ; set the variable
-    MOVE.W  D0,(INSTR_OPCODE_WORD)
+    MOVE.W          D0,(INSTR_OPCODE_WORD)
     RTS
     
 setFirstExt
-    MOVE.L  D0,(INSTR_EXT_1)
+    MOVE.L          D0,(INSTR_EXT_1)
     RTS
     
 setSecondExt
-    MOVE.L  D0,(INSTR_EXT_2)
+    MOVE.L          D0,(INSTR_EXT_2)
     RTS
     
 ; TODO: Macro for these setters
@@ -148,7 +148,7 @@ getOpcodeSize
     ;                   01 - .W
     ;                   10 - .L
     ;                   11 - special case
-    isolateBitsM    D4,#7,#6
+    isoBitsM        D4,#7,#6
     RTS
 
 
@@ -156,13 +156,38 @@ getOpcodeSize
 **              error print-outs for program              **
 ************************************************************ 
 invalidOpcode	
-	PRINT       <Error: Invalid opcode! >
-	PRINT       <(this instruction is not supported)>,ENDL
-	ILLEGAL
+	PRINT           <Error: Invalid opcode! >
+	PRINT           <(this instruction is not supported)>,ENDL
+*	ILLEGAL
+	
+	; TODO: return to IO opcode reader func from here
+	; to avoid memory leaks with the stack, I need to reset
+	; its ptr to what it was when findOpcodeMain was called
+	
+	; the reason I need this is because if the opcode is
+	; invalid, there's no need to read the instruction args
+	MOVEA           A5,SP
+	RTS
 *	STOP        #$DEAD
 
-; <instr_name>.<instr_size>
+; <instr_name>.<instr_size>(tab)(tab)<arg2(source)>,<arg1(dest)>
 
+RUN_TRAP    MACRO
+    IFNE NARG-1                       ;if not 1 arguments
+        FAIL ERROR, RUN_TRAP requires an argument
+        MEXIT
+    ENDC
+    MOVE.B  \1,D0
+    TRAP    #15
+    ENDM
+
+
+
+trapTest
+    NOP
+    RUN_TRAP    #7
+    NOP
+    RUN_TRAP    #2
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
