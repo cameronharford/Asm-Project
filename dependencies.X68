@@ -172,7 +172,8 @@ invalidOpcode
 
 ; <instr_name>.<instr_size>(tab)(tab)<arg2(source)>,<arg1(dest)>
 
-RUN_TRAP    MACRO
+; TODO: documentation
+RUNTRAP    MACRO
     IFNE NARG-1                       ;if not 1 arguments
         FAIL ERROR, RUN_TRAP requires an argument
         MEXIT
@@ -183,11 +184,6 @@ RUN_TRAP    MACRO
 
 
 
-trapTest
-    NOP
-    RUN_TRAP    #7
-    NOP
-    RUN_TRAP    #2
 
 *~Font name~Courier New~
 *~Font size~10~
