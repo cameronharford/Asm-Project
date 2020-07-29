@@ -1,9 +1,9 @@
-*	ORG         $2800
-
-	INCLUDE     "print.X68"
-    INCLUDE		"isolateBits.X68"
-	INCLUDE		"calcJmpOffset.X68"
-	INCLUDE     "calcDisplacement.X68"
+*    IFEQ    DEPENDENCY
+*DEPENDENCY  SET     1
+	    INCLUDE     "print.X68"
+        INCLUDE		"isolateBits.X68"
+	    INCLUDE		"calcJmpOffset.X68"
+	    INCLUDE     "calcDisplacement.X68"
 	
 
 * Register usage key:
@@ -166,21 +166,38 @@ invalidOpcode
 	
 	; the reason I need this is because if the opcode is
 	; invalid, there's no need to read the instruction args
-	MOVEA           A5,SP
 	RTS
 *	STOP        #$DEAD
-
 ; <instr_name>.<instr_size>(tab)(tab)<arg2(source)>,<arg1(dest)>
 
 ; TODO: documentation
-RUNTRAP    MACRO
-    IFNE NARG-1                       ;if not 1 arguments
-        FAIL ERROR, RUN_TRAP requires an argument
-        MEXIT
-    ENDC
-    MOVE.B  \1,D0
-    TRAP    #15
-    ENDM
+RUNTRAP     MACRO
+        IFNE NARG-1                       ;if not 1 arguments
+            FAIL ERROR, RUNTRAP requires an argument
+            MEXIT
+        ENDC
+        MOVE.B  \1,D0
+        TRAP    #15
+        ENDM    
+
+; TODO: documentation
+; compares an immediate (arg 1) against data pointed to by an address (arg 2)
+; arg 3: optional branch instruction name (ex: BEQ)
+; arg 4: optional branch location (label name or address)
+IMMCMP      MACRO
+        IFLT NARG-2                       ;if not 2+ arguments
+            FAIL ERROR, IMMCMP requires at least 2 arguments
+            MEXIT
+        ENDC
+        ; macro witchcraft
+        CMPI.\0 \1,(\2)
+        IFEQ NARG-4
+            \3  \4
+        ENDC
+        ENDM
+        
+
+*    ENDC
 
 
 

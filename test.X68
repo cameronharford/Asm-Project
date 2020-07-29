@@ -1,22 +1,15 @@
-*-----------------------------------------------------------
-* Title      :
-* Written by :
-* Date       :
-* Description:
-*-----------------------------------------------------------
-    ORG    $1000
-    INCLUDE "parseInstructionMain.X68"
-    INCLUDE "findOpcodeMain.X68"
-START:                  ; first instruction of program
-
-* Put program code here
-
-    SIMHALT             ; halt simulator
-
-* Put variables and constants here
-
-    END    START        ; last line of source
-
+    ORG $1000
+************************************************************
+**                 main program entry LOLE                     **
+************************************************************
+    INCLUDE     "someDoc.txt"
+    INCLUDE     "dependencies.x68"
+    
+START 
+    PRINT       <Welcome to the PowerPC is Better 68k Disassembler>,ENDL
+    SIMHALT
+    
+    END         START
 
 *~Font name~Courier New~
 *~Font size~10~

@@ -93,6 +93,7 @@ modeJmpTable111
     NOP
     
     STOP    #001    ; Abs Long
+    ; illegal for MULS, DIVU
     NOP
     
     STOP    #010    ; PC w/ Displacement
@@ -104,7 +105,9 @@ modeJmpTable111
     NOP
     
     STOP    #100    ; Immediate
-    ; illegal for MOVE (dest), ADD, 
+    ; illegal for MOVE (dest), ADD, SUB, AND, 
+    ; for MOVE, you can't use an immediate as a destination
+    ; for ADD/SUB/AND, they have variants which handle immediates (ADDI/SUBI/ANDI)
     ; check if instr is ADD, SUB, AND b/c that would be illegal
     NOP
     

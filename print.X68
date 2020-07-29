@@ -50,7 +50,7 @@ DEBUG_PRINT MACRO
 * print the number
 PRINTN    MACRO
     SECTION     CODE
-    MOVEM.L     D0/D1,-(SP)
+    MOVEM.L     D0-D2,-(SP)
     IFNC '\1','D1'          if some register other than D1
         MOVE.L    \1,D1       put number to display in D1
     ENDC
@@ -62,30 +62,8 @@ PRINTN    MACRO
         MOVE.B  #3,D0
     ENDC
     TRAP    #15             display number in D1
-    MOVEM.L (SP)+,D0/D1
+    MOVEM.L (SP)+,D0-D2
     ENDM
-
-**********************
-*    Program Start
-**********************
-*START
-*    PRINT   <Macro Demonstration Program>,ENDL
-*
-*    POWER   #4,#3
-*    PRINT   <4^3 = >
-*    PRINTN  D1
-*
-*    SIMHALT                 Halt the program
-*    END     START
-
-
-
-
-
-
-
-
-
 
 
 
