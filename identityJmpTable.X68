@@ -1,4 +1,3 @@
-DEPENDENCY  SET     0
 	INCLUDE		"dependencies.X68"
 *    ORG         $1800
 
@@ -321,6 +320,7 @@ sub_asd
 sub_lsd
     DEBUG_PRINT <lsr/lsl>,ENDL
     STOP        #$1110
+
 
 
 

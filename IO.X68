@@ -1,5 +1,7 @@
     ORG $1000
+DEPENDENCY  SET     0
     INCLUDE  "dependencies.x68"
+    INCLUDE  "parseInstructionMain.x68"
 START 
 ************************************************************
 **                 main program entry                     **
@@ -16,7 +18,7 @@ START
     RUNTRAP <#2>
     MOVE.B  #8,D0                   ;we want to parse 8 chars to hex
     JSR     SUB_loadHexString
-    MOVE.L  D1,startAddress
+    MOVE.L  D1,(startAddress)
     
 ;get ending address
     PRINT   <Enter a valid and even 8-char hexadecimal ending address: >
@@ -24,7 +26,7 @@ START
     RUNTRAP <#2>
     MOVE.B  #8,D0                   ;we want to parse 8 chars to hex
     JSR     SUB_loadHexString
-    MOVE.L  D1,endAddress
+    MOVE.L  D1,(endAddress)
     JSR     SUB_printer
 ************************************************************
 **                convert ascii to hex                    **
@@ -70,18 +72,21 @@ LOOP_TAIL
 *A6 - address pointer
 SUB_printer
     MOVE.L  #4,A5                   ;load the number of lines we have printed so far into A5. this means all the intro garbage.
-    MOVE.L  startAddress,A6         ;load our starting address into our address pointer. so we can start at the beginning of where the file is loaded
+    LEA     startAddress,A6         ;load our starting address into our address pointer. so we can start at the beginning of where the file is loaded
+    MOVEA.L (A6),A6
     JMP     P_CONTINUE
 P_CLEARSCREEN
     MOVE.L  #0,A5
-    PRINT   <Please press enter to continue.>,CR,LF
+    PRINT   <Please press enter to continue.>,ENDL
     RUNTRAP <#2>
 P_CONTINUE   
 ;checking if we are at the end of our file
-    CMP.L   endAddress,A6           ;check if we are done reading the file
+    LEA     endAddress,A0
+;```
+    CMP.L   (A0),A6                 ;check if we are done reading the file
     BGT     P_DONE                  ;jump to the ask-to-read-another-file printout and termination
 ;printing an instruction and updating our instruction pointer
-    PRINT   <test>,ENDL
+    BSR     parseInstructionMain
     ADD.L   #2,A6
 ;reading how full our screen is
     ADD.L   #1,A5                   ;update how many lines we have printed to the screen
@@ -94,14 +99,11 @@ P_DONE
     MOVE.L  #$FF00,D1
     RUNTRAP <#11>
     JMP     START
-
-asciiToHexBuffer        EQU     $00010000
-startAddress            EQU     $00010010
-endAddress              EQU     $00010020
-sline_address           EQU     $00010030
-sline_count             EQU     $00010040
-
+    
     END START
+
+
+
 
 
 *~Font name~Courier New~

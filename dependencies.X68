@@ -1,10 +1,14 @@
-*    IFEQ    DEPENDENCY
-*DEPENDENCY  SET     1
+; This handles the multiple definitions problem
+    IFEQ    DEPENDENCY
+DEPENDENCY  SET     1
+
 	    INCLUDE     "print.X68"
         INCLUDE		"isolateBits.X68"
 	    INCLUDE		"calcJmpOffset.X68"
 	    INCLUDE     "calcDisplacement.X68"
-	
+
+; I've marked possible error locations with "```"
+
 
 * Register usage key:
 *   D0 = randomly used; can be freely modified
@@ -30,9 +34,10 @@
 
 **************************************************************
 * MISC NOTE:                                                 *
-* Unlike registers, when accessing data from memory locations*
-* or variables (which are just labels for program-allocated  *
-* memory) programs use Big Endian byte order. Example:       *
+* Unlike registers, when accessing data from either memory   *
+* locations or variables (which are just labels for          *
+* program-allocated memory), programs use Big Endian byte    *
+* order. Example:                                            *
 *                                                            *
 * $A000 contains the long $#12345678                         *
 * D0, D1, and D2 are initially 0                             *
@@ -51,6 +56,25 @@
 * When accessing the opcode extension variables INSTR_EXT_1  *
 * and INSTR_EXT_2, keep this fact in mind.                   *
 **************************************************************
+
+
+asciiToHexBuffer        DC.B    0,0,0,0,0,0,0,0,0
+startAddress            DC.L    0
+endAddress              DC.L    0
+sline_address           DC.L    0
+sline_count             DC.L    0
+
+
+readFromFile
+; reads a word (2 bytes) from the test file in memory
+; A6 points to the current instruction in the test file
+
+
+
+************************************************************
+**        set methods for the instruction pointers        **
+************************************************************
+
 
 
 ************************************************************
@@ -93,29 +117,112 @@ getExtension
 getExtensionReturn
     RTS
     
-************************************************************
-**        set methods for the instruction pointers        **
-************************************************************
-setOpcode
-    ; ensure there's nothing lurking in D0's upper word
-    ANDI.L          #$FFFF,D0
-    ; set the variable
-    MOVE.W          D0,(INSTR_OPCODE_WORD)
-    RTS
-    
-setFirstExt
-    MOVE.L          D0,(INSTR_EXT_1)
-    RTS
-    
-setSecondExt
-    MOVE.L          D0,(INSTR_EXT_2)
-    RTS
-    
-; TODO: Macro for these setters
 
-************************************************************
-**         variable for storing instruction bytes         **
-************************************************************
+S_MODE_FLAGS          DS.W    1
+D_MODE_FLAGS          DS.W    1
+**************************************************************
+* FLAG Documentation:                                        *
+* -When we identify an instruction name, such as MOVE, a     *
+* variable is set that indicates what argument modes are     *
+* legal and illegal
+* -Legal argument modes have their bits set to 1, while      *
+* illegal modes are set to 0                                 *
+* Order goes right-to-left, starting at mode 000 (Data reg). *
+* -If the bit corresponding to the mode number is 0, we then *
+* print "<invalid arg>"                                      *
+* -Because we check if the entire word is 0 before specific  *
+* bits, there are no false positives (0 & <bit> is 0)        *
+*                                                            *
+* Flag bits:                                                 *
+* 0: Data Reg                                                *
+* 1: Address Reg                                             *
+* 2: Address                                                 *
+* 3: Address w/ Postinc                                      *
+* 4: Address w/ Predec                                       *
+* 5: Address w/ Displacement                                 *
+* 6: Address w/ Index                                        *
+* 7: Absolute Short                                          *
+* 8: Absolute Long                                           *
+* 9: Program Counter w/ Displacement                         *
+* 10: Program Counter w/ Index                               *
+* 11: Immediate                                              *
+* 12: unused                                                 *
+* 13: unused                                                 *
+* 14: unused                                                 *
+* 15: unused                                                 *
+* 16: unused                                                 *
+*                                                            *
+* Dest Mode: 11 10 9  8  7  6  5  4  3  2  1  0              *
+* MOVE:     %0  0  0  1  1  1  1  1  1  1  1  1              *
+* MOVEM:    %0  0  0  1  1  1  1  1  1  1  1  0              *
+* ADD:      %0  0  0  1  1  1  1  1  1  1  1  1              *
+* SUB:      %0  0  0  1  1  1  1  1  1  1  1  1              *
+* AND:      %0  0  0  1  1  1  1  1  1  1  1  1              *
+* MULS:     %1  1  1  1  1  1  1  1  1  1  1  1              *
+* DIVU:     %1  1  1  1  1  1  1  1  1  1  1  1              *
+* LEA:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* NOT:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* LSd:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* ASd:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+*                                                            *
+* Src Mode:  11 10 9  8  7  6  5  4  3  2  1  0              *
+* MOVE:     %1  1  1  1  1  1  1  1  1  1  1  1              *
+* MOVEM:    %1  1  1  1  1  1  1  1  1  1  1  1              *
+* ADD:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* SUB:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* AND:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* MULS:     %1  1  1  1  1  1  1  1  1  1  1  1              *
+* DIVU:     %1  1  1  1  1  1  1  1  1  1  1  1              *
+* LEA:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* NOT:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* LSd:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* ASd:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+*                                                            *
+*                                                            *
+* Note: we don't have a special case for instructions that   *
+* have no args here. These would be NOP and RTS, and are     *
+* handled in the identityJmpTable method because it's easier *
+* and faster than checking every time here.                  *
+**************************************************************
+
+
+
+checkMode
+; D3 contains the mode we must check
+; D5 contains the arg value (Xn)
+; A3 contains the address of either S_MODE_FLAGS or D_MOVE_FLAGS
+    CMP.W       #0,(A3)
+    ; if the flag is 0, the instruction doesn't use the arg
+    BNE         checkMode_1
+    ; therefore, we can just return
+    RTS
+checkMode_1
+    CMP.B       #%111,D3
+    BNE         checkMode_2
+    ADD         D5,D3
+    ; I add arg value to mode here because 111 has several cases
+    ; the flag variable has these cases following consecutively after mode
+    ; ie: 7-11
+checkMode_2
+;``` I forget if args should be D3 and D3 rather than D3 and D3 - 1
+    isoBitsM    (A3),D3,D3
+    CMP         #0,D0
+    BEQ         checkMode_Bad
+    
+*    ; if the macro doesn't work:
+*    MOVE.L      #1,D0
+*    MOVE.L      (A3),D2
+*    LSL.L       D3,D0
+*    AND.L       D0,D2
+*    BEQ         checkMode_Bad
+    
+    
+checkMode_Bad
+; loc for illegal modes
+; do stuff
+    PRINT       <Illegal arg>
+    RTS
+
 INSTR_BYTES         DS.B    10  
 * 10 bytes (80 bits) is the max we need I think.
 * 2 for opcode, 4 for long extension, 4 for long extension.
@@ -161,11 +268,15 @@ invalidOpcode
 *	ILLEGAL
 	
 	; TODO: return to IO opcode reader func from here
-	; to avoid memory leaks with the stack, I need to reset
-	; its ptr to what it was when findOpcodeMain was called
 	
+    ; to avoid memory leaks with the stack, I need to reset
+	; its ptr to what it was when findOpcodeMain was called
+	MOVEA   A2,SP
 	; the reason I need this is because if the opcode is
 	; invalid, there's no need to read the instruction args
+	; this also allows me to use RTS, since SP now points at 
+	; the return address
+;```
 	RTS
 *	STOP        #$DEAD
 ; <instr_name>.<instr_size>(tab)(tab)<arg2(source)>,<arg1(dest)>
@@ -173,8 +284,11 @@ invalidOpcode
 ; TODO: documentation
 RUNTRAP     MACRO
         IFNE NARG-1                       ;if not 1 arguments
-            FAIL ERROR, RUNTRAP requires an argument
-            MEXIT
+            IFNE NARG-2
+                FAIL ERROR, RUNTRAP requires 1-2 arguments
+                MEXIT
+            ENDC
+            MOVE.L  \2,D1
         ENDC
         MOVE.B  \1,D0
         TRAP    #15
@@ -195,11 +309,7 @@ IMMCMP      MACRO
             \3  \4
         ENDC
         ENDM
-        
-
-*    ENDC
-
-
+    ENDC
 
 
 *~Font name~Courier New~
