@@ -40,9 +40,18 @@ isoBitsM        MACRO
         FAIL ERROR, isolateBits requires 3 arguments
         MEXIT
     ENDC
-    MOVE.L      \1,D0
-    MOVE.B      \2,D1
-    MOVE.B      \3,D2
+    IFNC '\1','D0'
+        ; if arg1 isn't D0, move it to D0
+        MOVE.L      \1,D0
+    ENDC
+    IFNC '\2','D1'
+        ; same thing with arg2/D1
+        MOVE.B      \2,D1
+    ENDC
+    IFNC '\3','D2'
+        ; same thing with arg3/D2
+        MOVE.B      \3,D2
+    ENDC
     BSR         isolateBits
     ENDM
     
@@ -51,6 +60,7 @@ isoBitsM        MACRO
 ;
 ; same as the above example
 ; returns D0 = 0x2
+
 
 *~Font name~Courier New~
 *~Font size~10~

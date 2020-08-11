@@ -27,6 +27,9 @@ MSG\@    DC.B    '\1'
         IFC      '\2','ENDL'
             DC.B    $D,$A
         ENDC
+        IFNC     '\2','ENDL'
+            DC.B    \2
+        ENDC
     ENDC
     DC.B    0
     SECTION     CODE
@@ -64,6 +67,7 @@ PRINTN    MACRO
     TRAP    #15             display number in D1
     MOVEM.L (SP)+,D0-D2
     ENDM
+
 
 
 
