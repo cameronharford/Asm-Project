@@ -76,6 +76,7 @@ SUB_printer
     MOVEA.L (A6),A6
     JMP     P_CONTINUE
 P_CLEARSCREEN
+    ADD     A5,(sline_count)
     MOVE.L  #0,A5
     PRINT   <Please press enter to continue.>,ENDL
     RUNTRAP <#2>
@@ -101,6 +102,7 @@ P_DONE
     JMP     START
     
     END START
+
 
 
 

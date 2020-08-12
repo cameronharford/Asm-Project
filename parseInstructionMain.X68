@@ -37,6 +37,7 @@ instrTypeTable
 ; instruction arg archetypes:
 ; Branches
 ; No args (NOP, RTS)
+;   -handled within opcode identifier
 ; Source arg
 ;   -arg value within opcode
 ;   -arg value appended as word/long extension
@@ -198,6 +199,7 @@ printImmediate
 
 ; TODO
 ; should I print as decimal or hex?
+
 
 
 

@@ -106,14 +106,15 @@ sub_not
 	DEBUG_PRINT <not>,ENDL
     STOP        #$0100
 sub_nop
-	DEBUG_PRINT <nop>,ENDL
+	PRINT       <nop>,ENDL
+	MOVEA       A2,SP
     STOP        #$4E71
 sub_rts
 	DEBUG_PRINT <rts>,ENDL
     STOP        #$4E74
 sub_jsr
 	DEBUG_PRINT <jsr>,ENDL
-    STOP        #$0100    
+    STOP        #$0100
 sub_movem
 	DEBUG_PRINT <movem>,ENDL
     STOP        #$0100
@@ -320,6 +321,7 @@ sub_asd
 sub_lsd
     DEBUG_PRINT <lsr/lsl>,ENDL
     STOP        #$1110
+
 
 
 

@@ -71,51 +71,6 @@ readFromFile
 
 
 
-************************************************************
-**        set methods for the instruction pointers        **
-************************************************************
-
-
-
-************************************************************
-**        get methods for the instruction pointers        **
-************************************************************
-getOpcode
-    ; clear D0 just in case it has high order bits
-    CLR.L           D0
-    
-    ; load the word and return
-    LEA             INSTR_OPCODE_WORD,A1
-    MOVE.W          (A1),D0
-    RTS
-    
-getFirstExt
-    LEA             INSTR_EXT_1,A1
-    BRA             getExtension
-    
-getSecondExt
-    LEA             INSTR_EXT_2,A1
-    ; don't even need to branch lol
-
-getExtension
-    ; in any case we'll load D0 and return
-    MOVE.L          (A1),D0
-    
-    ; check for null value so we don't waste instructions
-    ; this should work as a zero compare
-    BEQ             getExtensionReturn
-    
-    ; check if the extension is a word
-    CMP.W           #0,4(A1)
-    BNE             getExtensionReturn
-    
-    ; it is, so we need to account for byte order
-    ; it'd be faster to do this by hand but I'm lazy
-    isoBitsM        D0,#31,#16    
-    ; same as D0 = D0 >> 16
-    
-getExtensionReturn
-    RTS
     
 
 S_MODE_FLAGS          DS.W    1
@@ -131,7 +86,7 @@ D_MODE_FLAGS          DS.W    1
 * -If the bit corresponding to the mode number is 0, we then *
 * print "<invalid arg>"                                      *
 * -Because we check if the entire word is 0 before specific  *
-* bits, there are no false positives (0 & <bit> is 0)        *
+* bits, there are no false positives (0 & <bit> is always 0) *
 *                                                            *
 * Flag bits:                                                 *
 * 0: Data Reg                                                *
@@ -158,12 +113,15 @@ D_MODE_FLAGS          DS.W    1
 * ADD:      %0  0  0  1  1  1  1  1  1  1  1  1              *
 * SUB:      %0  0  0  1  1  1  1  1  1  1  1  1              *
 * AND:      %0  0  0  1  1  1  1  1  1  1  1  1              *
-* MULS:     %1  1  1  1  1  1  1  1  1  1  1  1              *
-* DIVU:     %1  1  1  1  1  1  1  1  1  1  1  1              *
-* LEA:      %1  1  1  1  1  1  1  1  1  1  1  1              *
-* NOT:      %1  1  1  1  1  1  1  1  1  1  1  1              *
-* LSd:      %1  1  1  1  1  1  1  1  1  1  1  1              *
-* ASd:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* MULS:     %0  1  1  1  1  1  1  1  1  1  1  1              *
+* DIVU:     %0  1  1  1  1  1  1  1  1  1  1  1              *
+* LEA:      never has a destination mode other than 111      *
+* NOT:      %0  1  1  1  1  1  1  1  1  1  1  1              *
+*   -technically, NOT doesn't have a dest mode, but since    *
+*    size is variable, I use this method to check
+* LSd:      %0  1  1  1  1  1  1  1  1  1  1  1              *
+* ASd:      %0  1  1  1  1  1  1  1  1  1  1  1              *
+* JSR:      %0  1  1  1  1  1  1  1  1  1  1  1              *                               
 *                                                            *
 * Src Mode:  11 10 9  8  7  6  5  4  3  2  1  0              *
 * MOVE:     %1  1  1  1  1  1  1  1  1  1  1  1              *
@@ -174,9 +132,10 @@ D_MODE_FLAGS          DS.W    1
 * MULS:     %1  1  1  1  1  1  1  1  1  1  1  1              *
 * DIVU:     %1  1  1  1  1  1  1  1  1  1  1  1              *
 * LEA:      %1  1  1  1  1  1  1  1  1  1  1  1              *
-* NOT:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* NOT:      no source used                                   *
 * LSd:      %1  1  1  1  1  1  1  1  1  1  1  1              *
 * ASd:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* JSR:      no source used                                   * 
 *                                                            *
 *                                                            *
 * Note: we don't have a special case for instructions that   *
@@ -193,6 +152,9 @@ checkMode
 ; A3 contains the address of either S_MODE_FLAGS or D_MOVE_FLAGS
     CMP.W       #0,(A3)
     ; if the flag is 0, the instruction doesn't use the arg
+    ; note: this indicates whether an instruction that CAN use an arg doesn't do so;
+    ; we aren't checking instructions that never have an arg type
+    ; ex: NOT never has a source arg
     BNE         checkMode_1
     ; therefore, we can just return
     RTS
@@ -223,32 +185,9 @@ checkMode_Bad
     PRINT       <Illegal arg>
     RTS
 
-INSTR_BYTES         DS.B    10  
-* 10 bytes (80 bits) is the max we need I think.
-* 2 for opcode, 4 for long extension, 4 for long extension.
-* long extensions are in case we have 2 absolute longs such
-* as for:  MOVE.L  ($10001234),($10005678)
-
-
 ************************************************************
 **         instruction reference pointers/offsets         **
-************************************************************                                
-INSTR_OPCODE_WORD   EQU     INSTR_BYTES     
-* used for the 16-bit opcode
-
-INSTR_EXT_1         EQU     (INSTR_BYTES)+2 
-* used if instruction has an extension.
-* space is allocated for a long, but may only have a byte or
-* word stored, depending on the instruction we're reading.
-
-INSTR_EXT_2         EQU     (INSTR_BYTES)+6 
-* used if instruction has a second extension
-* conditions are same as first extension
-* if this exists, it's always one of two things:
-* 1. a destination address (long)
-* 2. a displacement offset (word)
-
-
+************************************************************
 getOpcodeSize
     ; returns bits 7-6 of an opcode, which is usually size
     ; possible returns: 00 - .B
@@ -309,7 +248,21 @@ IMMCMP      MACRO
             \3  \4
         ENDC
         ENDM
+        
+printLineStart
+        ; print the memory address of the current line
+        ;```
+        ; TODO: make sure this prints out 8 chars (not 4 for the address)
+        PRINTN  A6.L,#16
+        ; print spacing
+        PRINT   <  >
+        
+        
+        
+        
     ENDC
+
+
 
 
 *~Font name~Courier New~
