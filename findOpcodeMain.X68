@@ -14,6 +14,7 @@ findOpcodeMain:
 	
 	; get an offset of the first jump table to branch to, then jump there
     BRA 		calcJmpOffset
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

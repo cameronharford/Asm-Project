@@ -1,9 +1,11 @@
+; Multiple dependencies fix
+
 	INCLUDE		"dependencies.X68"
 *    ORG         $1800
 
 ; jump table for bits 15-12 of an instruction opcode
-; invalidOpcode is located above this sub
-; each jump to it must have a nop as well
+; NOPs are used for padding because jumps to invalidOpcode
+; only have a word extension rather than a long
 firstJmpTable
     JMP         invalidOpcode       ; 0000 are all invalid
     NOP
@@ -36,17 +38,20 @@ firstJmpTable
 moveByte     
 	; Move Byte
 	DEBUG_PRINT <move byte>,ENDL
-    STOP        #$2700
+	MOVEQ   #1,D5
+    RTS
 
 moveLong  
 	; Move Long
 	DEBUG_PRINT <move long>,ENDL
-    STOP        #$2700
-
+	MOVEQ   #1,D5
+    RTS
+    
 moveWord  
 	; Move Word
 	DEBUG_PRINT <move word>,ENDL
-    STOP        #$2700
+	MOVEQ   #1,D5
+    RTS
 
 ************************************************************
 **             NOT, NOP, RTS, JSR, MOVEM, LEA             **
@@ -78,10 +83,10 @@ code0100
     
     ; isoBitsM    D4,#8,#6
     ; since we already have bits 11-6 in D0 we don't need to call isoBitsM again
-    ANDI.B          #%111,D0
-    CMP.B           #%110,D0
-    BEQ             invalidOpcode       ; CHK 8-6 is 110 or 6
-    BGT             sub_lea             ; LEA is only 0100 opcode with 8-6 > 110 (111)
+    ANDI.B      #%111,D0
+    CMP.B       #%110,D0
+    BEQ         invalidOpcode       ; CHK 8-6 is 110 or 6
+    BGT         sub_lea             ; LEA is only 0100 opcode with 8-6 > 110 (111)
     
 
     ; now check for MOVEM
@@ -92,8 +97,10 @@ code0100
     BEQ         sub_movem
     
     ; check NOT
+    ; we saved bits 11-6 into D1 earlier so we can check directly
     EORI.B      #%100111,D1
     CMP.B       #%111100,D1
+;``` ble might make NOT read as invalid
     BLE         invalidOpcode
     ; NOT bits 11-6 XOR'd by 100111 is largest value within 0100 section
     ; possible values for NOT: 111111, 111110, 111101
@@ -104,23 +111,28 @@ code0100
 ; Instruction-specific subroutines
 sub_not
 	DEBUG_PRINT <not>,ENDL
-    STOP        #$0100
+	MOVEQ       #8,D5
+    RTS
 sub_nop
 	PRINT       <nop>,ENDL
 	MOVEA       A2,SP
-    STOP        #$4E71
+	RTS
 sub_rts
 	DEBUG_PRINT <rts>,ENDL
-    STOP        #$4E74
+	MOVEA       A2,SP
+	RTS
 sub_jsr
 	DEBUG_PRINT <jsr>,ENDL
-    STOP        #$0100
+	MOVEQ   #9,D5
+    RTS    
 sub_movem
 	DEBUG_PRINT <movem>,ENDL
-    STOP        #$0100
+	MOVEQ   #2,D5
+    RTS
 sub_lea
 	DEBUG_PRINT <lea>,ENDL
-    STOP        #$0100
+	MOVEQ   #7,D5
+    RTS
 
 
 
@@ -136,6 +148,7 @@ branchIdentify
 	; BSR so we can return here to calc displacement
 	BSR			calcJmpOffset
 	
+	MOVEQ       #10,D5
 	; TODO: displacement shit. Might need to generate a label (which would be aids)
 	; complete this code later
     STOP        #$2700
@@ -196,12 +209,13 @@ code1000
 	; DIVU: bits 8-6 are always 011
 	; no other 1000 opcode can have 8-6 as 011 so this is the only check we need
 	isoBitsM    D4,#8,#6
-	CMP.W           #%011,D0
-	BNE             invalidOpcode
+	CMP.W       #%011,D0
+	BNE         invalidOpcode
 	; we know the input is DIVU, so do something now....
 	
     DEBUG_PRINT <divu>,ENDL
-    STOP        #$2700
+	MOVEQ       #6,D5
+    RTS
 
 
 ************************************************************
@@ -214,12 +228,12 @@ subIdentify
     ; otherwise, invalid opcode
     ; SUBI has different 15-12 bits so we don't worry about it  
     
-    BSR             addSubHelper
+    BSR         addSubHelper
     
 	; do stuff
 	
     DEBUG_PRINT <sub>,ENDL
-    STOP        #$1001
+    RTS
     
     
 ************************************************************
@@ -231,41 +245,43 @@ code1100
 	; ABCD: bits 8-4 are always 10000
 	; EXG: bits 8-4 are always 1__00
 	isoBitsM    D4,#8,#4
-	ANDI.B          #%10011,D0
-	CMP.B           #%10000,D0
+	ANDI.B      #%10011,D0
+	CMP.B       #%10000,D0
 	; this check and branch takes care of ABCD and EXG
 	; TODO: test for false positives here
-	BEQ             invalidOpcode
+	BEQ         invalidOpcode
 		
 	; MULS: bit 8 is always 1 vs MULU where it's always 0
 	isoBitsM    D4,#8,#6
-	CMP.B   #%011,D0
-	BEQ     invalidOpcode
-	CMP.B   #%111,D0
-	BEQ     sub_muls
+	CMP.B       #%011,D0
+	BEQ         invalidOpcode
+	CMP.B       #%111,D0
+	BEQ         sub_muls
 	; ANDI has different 15-12 bits than AND
 	; AND has every bit after 12 non-constant
 	; so AND will be determined by ruling out other opcodes
 	
 sub_and
     DEBUG_PRINT <and>,ENDL
-    STOP        #$1100
+	MOVEQ   #3,D5
+    RTS
 
 sub_muls
     DEBUG_PRINT <muls>,ENDL
-    STOP        #$1100
+	MOVEQ   #6,D5
+    RTS
 
 ************************************************************
 **                      ADD instruction                   **
 ************************************************************
 addIdentify 
     ; same format as SUB apart from bits 15-12
-    BSR             addSubHelper
+    BSR         addSubHelper
     
     ; do stuff with ADD
     
     DEBUG_PRINT <add>,ENDL
-    STOP            #$1101
+    RTS
 
 
 ; helper function for sub and add to reduce duplicate code
@@ -275,15 +291,17 @@ addSubHelper
 *    The following should work but is probably inefficient    
     ; ADDA/SUBA check
     isoBitsM    D4,#7,#6
-    CMP.B           #%11,D0
-    BEQ             invalidOpcode
+    CMP.B       #%11,D0
+    BEQ         invalidOpcode
     
     ; ADDX/SUBX check
     ; trying out a bitmask of 304 - 0x130 (1 0011 0000), checking if result == 256 - 0x100
-    MOVE.W          D4,D0
-    ANDI.W          #304,D0
-    CMP.W           #256,D0
-    BEQ             invalidOpcode
+    MOVE.W      D4,D0
+    ANDI.W      #304,D0
+    CMP.W       #256,D0
+    BEQ         invalidOpcode
+    ; if we got here, the opcode is a valid sub/add
+	MOVEQ       #3,D5
     RTS
 
 ************************************************************
@@ -299,13 +317,16 @@ shiftIdentify
     BNE         typeTwo
 typeOne
     ; for type one, we need to check bits 10-9
+    DEBUG_PRINT <type 1 >
     isoBitsM    D4,#10,#9
+	MOVEQ       #4,D5
     BRA         calcJmpOffset
 typeTwo
     ; type two checks bits 4-3
+    DEBUG_PRINT <type 2 >
     isoBitsM    D4,#4,#3
-    BRA         calcJmpOffset    
-    STOP        #$2700
+	MOVEQ       #5,D5
+    BRA         calcJmpOffset
 	
 shiftJmpTable
     ; TODO: add subroutines for ASd and LSd
@@ -317,19 +338,13 @@ shiftJmpTable
 	
 sub_asd
     DEBUG_PRINT <asr/asl>,ENDL
-    STOP        #$1110
+	MOVEQ       #1,D5
+    RTS
 sub_lsd
     DEBUG_PRINT <lsr/lsl>,ENDL
-    STOP        #$1110
-
-
-
-
-
-
-
-
-
+    RTS
+    
+    
 
 
 

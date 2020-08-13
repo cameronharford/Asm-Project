@@ -1,27 +1,36 @@
-    INCLUDE     "dependencies.X68"
+    INCLUDE     "findOpcodeMain.X68"
+
 ; might want to include branch displacement calc function here if I don't use it in instr identification
 parseInstructionMain: 
     ; save SP so if opcode is invalid, we can return immediately
     MOVEA   SP,A2
     
-    ; I think this should parse the instructions by common patterns/formats
-    ; For ex, many opcodes use bits 0-2 for their source arg, and bits 3-5 for the arg mode/type
-    ; We could use a common method to parse this section
-    ; Basically, findOpcodeMain deals with identifying the name. It sets a string or flag somewhere for us
-    ; Based on this flag, we know the instruction's format
-    LEA     instrTypeTable,A0
-    ; D5 currently contains the index for the jump table
-    MOVE.B  D5,D0
-    BSR     calcJmpOffset
+    BSR     findOpcodeMain
+*    ; I think this should parse the instructions by common patterns/formats
+*    ; For ex, many opcodes use bits 0-2 for their source arg, and bits 3-5 for the arg mode/type
+*    ; We could use a common method to parse this section
+*    ; Basically, findOpcodeMain deals with identifying the name. It sets a string or flag somewhere for us
+*    ; Based on this flag, we know the instruction's format
+*    LEA     instrTypeTable,A0
+*    ; D5 currently contains the index for the jump table
+*    MOVE.B  D5,D0
+*    BSR     calcJmpOffset
     
     ; print instr size
     
     ; print source arg
+    BSR     getSrcReg
+    BSR     getSrcMode
     
     ; comma separating args
     PRINT   <,>
     
     ; print dest arg
+    BSR     getDestReg
+    BSR     getDestMode
+    
+    ; endl
+    PRINT   <>,ENDL
     
 	RTS
 
@@ -32,6 +41,12 @@ instrTypeTable
     JMP     instrTypeTwo
     JMP     instrTypeThree
     JMP     instrTypeFour
+    JMP     instrTypeFive
+    JMP     instrTypeSix
+    JMP     instrTypeSeven
+    JMP     instrTypeEight
+    JMP     instrTypeNine
+    JMP     instrTypeTen
     
 
 ; instruction arg archetypes:
@@ -44,36 +59,77 @@ instrTypeTable
 ; Source and dest args
 ;   -arg values within opcode
 ;   -arg values appended as word/long extensions
+; TYPE VALUES: 
+; 1 - MOVE
+; 2 - MOVEM
+; 3 - ADD/SUB/AND
+; 4 - LSd/ASd (type 1)
+; 5 - LSd/ASd (type 2)
+; 6 - DIVU/MULS
+; 7 - LEA
+; 8 - NOT
+; 9 - JSR
+; 10 - BRA/BEQ/BGT/BLE
 
 ; source arg format is almost universal, exceptions being BRA/BEQ/BGT/BLE, RTS, NOP
 
 instrTypeOne
-; for ADD, SUB, AND
-; source mode is standard, dest arg is data reg, dest mode is direction and size
 
     ; print size first
-
+    DEBUG_PRINT <type  1 - >
+    RTS
 
 instrTypeTwo
 ; for 
-	
+	DEBUG_PRINT <type  2 - >
+    RTS
+    
 instrTypeThree
-; for 
-
+; for ADD, SUB, AND
+; source mode is standard, dest arg is data reg, dest mode is direction and size
+    DEBUG_PRINT <type  3 - >
+    RTS
 
 instrTypeFour
+    DEBUG_PRINT <type  4 - >
+    RTS
+
+instrTypeFive
+    DEBUG_PRINT <type  5 - >
+    RTS
+
+instrTypeSix
+    DEBUG_PRINT <type  6 - >
+    RTS
+
+instrTypeSeven
+    DEBUG_PRINT <type  7 - >
+    RTS
+
+instrTypeEight
+    DEBUG_PRINT <type  8 - >
+    RTS
+
+instrTypeNine
+    DEBUG_PRINT <type  9 - >
+    RTS
+    
+instrTypeTen
 ; for branching (BRA/BEQ/BGT/BLE)
-
-
+; TODO: add sanity check for displacement addr
+    DEBUG_PRINT <type 10 - >
+    RTS
 
 getSrcMode
     isoBitsM    D4,#5,#3
     LEA         modeJmpTable,A0
-    JMP         calcJmpOffset
+    BRA         calcJmpOffset
     RTS ; TODO: remove if this sub uses JMP, keep for JSR
     
 getDestMode
-    
+    isoBitsM    D4,#8,#6
+    LEA         modeJmpTable,A0
+    BRA         calcJmpOffset
     RTS ; TODO: remove if this sub uses JMP, keep for JSR
     
 getSrcReg
@@ -82,7 +138,7 @@ getSrcReg
     MOVE.B      D0,D3
     RTS
     
-getDestRegister
+getDestReg
     isoBitsM    D4,#11,#9
     MOVE.B      D0,D3
     RTS
@@ -90,32 +146,26 @@ getDestRegister
 modeJmpTable
     ; jump table for argument mode
     ; NOP's are for padding so I can reuse calcJmpOffset
-    JMP     printRegD ; #000    ; Data Reg, D0-D7
-    ; illegal for
-    NOP
+    JMP         printRegD ; #000    ; Data Reg, D0-D7
     
-    JMP     printRegA ; #001    ; Addr Reg, A0-A7
+    JMP         printRegA ; #001    ; Addr Reg, A0-A7
     ; illegal for MOVE, MOVEM, ADD, SUB, AND, NOT, LSd, ASd, JSR
     
-    JMP     printAddress ; #010    ; Address, (A0)-(A7)
+    JMP         printAddress ; #010    ; Address, (A0)-(A7)
     
-    JMP     printPostInc ; #011    ; Address w/ Postinc, (An)+
+    JMP         printAddrPostInc ; #011    ; Address w/ Postinc, (An)+
     ; illegal for 
     
-    JMP     printPreDec ; #100    ; Address w/ Predec, -(An)
-    ; illegal for 
-    NOP
+    JMP         printAddrPreDec ; #100    ; Address w/ Predec, -(An)
     
-    STOP    #101    ; Address w/ Displacement, (d16,An,Xn)
-    ; illegal for 
-    NOP
+    JMP         printAddrDisp ; Address w/ Displacement, (d16,An,Xn)
+    ; illegal for
     
-    STOP    #110    ; Address w/ Index (d8,An,Xn)
+    JMP         printAddrIndex ; Address w/ Index (d8,An,Xn)
     ; illegal for 
-    NOP
     
     ; case 111
-    BSR     getRegister
+    MOVE.B  D3,D0
     LEA     modeJmpTable111,A0
     JMP     calcJmpOffset
         
@@ -123,27 +173,22 @@ modeJmpTable
 modeJmpTable111
 ; do all of these modes require an extension?
 ; these cases do: 0,1,100
-    STOP    #000    ; Abs Short
-    NOP
+    JMP     printAbsShort ; Abs Short
     
-    STOP    #001    ; Abs Long
+    JMP     printAbsLong ; Abs Long
     ; illegal for MULS, DIVU
-    NOP
     
-    STOP    #010    ; PC w/ Displacement
+    JMP     printCounterDisp ; PC w/ Displacement
     ; illegal for MOVE, 
-    NOP
     
-    STOP    #011    ; PC w/ Index
+    JMP     printCounterIndex ; PC w/ Index
     ; illegal for MOVE, 
-    NOP
     
-    STOP    #100    ; Immediate
+    JMP     printImmediate ; Immediate
     ; illegal for MOVE (dest), ADD, SUB, AND, 
     ; for MOVE, you can't use an immediate as a destination
     ; for ADD/SUB/AND, they have variants which handle immediates (ADDI/SUBI/ANDI)
     ; check if instr is ADD, SUB, AND b/c that would be illegal
-    NOP
     
     ; there are no valid cases for 101-111 so opcode is universally illegal
     ; 101
@@ -155,19 +200,18 @@ modeJmpTable111
     NOP
     NOP
     ; 111
-    JMP         invalidOpcode ; should I instead print out illegal args?
-   
+    ; TODO: change to illegalArgs and make said function
+    ; JMP     invalidOpcode ; should I instead print out illegal args?
+    DEBUG_PRINT <invalid arg>
+    RTS
 
-printReg
-; TODO
-    ; idea for logic:
-    ;
-    CMP.B   #0,D3
-    BNE     
 
 printRegD
+; TODO
     PRINTN  #$D,#16
-    PRINTN  
+    PRINTN  D3
+    RTS
+*    PRINTN  
 
 printRegA
 ; TODO
@@ -178,27 +222,70 @@ printRegA
    
 printAddress
 ; TODO
-    PRINT   <(>
-    BSR     printRegA
-    PRINT   <)>
+    PRINT   <addr>
+
+*    PRINT   <(>
+*    BSR     printRegA
+*    PRINT   <)>
     RTS
    
-printPreDec
+printAddrPostInc
 ; TODO
-    PRINT   <->
-    BSR     printAddress  
+    PRINT   <addr w/ postinc>
+
+*    BSR     printAddress
+*    PRINT   <+>
+    RTS
+
+printAddrPreDec
+; TODO
+    PRINT   <addr w/ predec>
+
+*    PRINT   <->
+*    BSR     printAddress  
     RTS  
 
-printPostInc
-; TODO
-    BSR     printAddress
-    PRINT   <+>
+printAddrDisp
+    PRINT   <addr w/ displacement>
     RTS
-    
+
+printAddrIndex
+    PRINT   <addr w/ index>
+    RTS
+
+printAbsShort
+    PRINT   <absolute short>
+    RTS
+
+printAbsLong
+    PRINT   <absolute long>
+    RTS
+
+printCounterDisp
+    PRINT   <counter w/ displacement>
+    RTS
+
+printCounterIndex
+    PRINT   <counter w/ index>
+    RTS
+ 
 printImmediate
+    PRINT   <immediate>
+    RTS
+
 
 ; TODO
 ; should I print as decimal or hex?
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,6 +1,6 @@
 ; This handles the multiple definitions problem
-    IFEQ    DEPENDENCY
-DEPENDENCY  SET     1
+*    IFEQ    DEPENDENCY
+*DEPENDENCY  SET     1
 
 	    INCLUDE     "print.X68"
         INCLUDE		"isolateBits.X68"
@@ -8,7 +8,10 @@ DEPENDENCY  SET     1
 	    INCLUDE     "calcDisplacement.X68"
 
 ; I've marked possible error locations with "```"
-
+* misc possible errors:
+* printing out address of instruction + 2 by accident
+*   -this would be caused by readFromFile incrementing by 2
+*    and the printer not accounting for this
 
 * Register usage key:
 *   D0 = randomly used; can be freely modified
@@ -24,11 +27,12 @@ DEPENDENCY  SET     1
 *   A0 =  
 *   A1 = randomly used, typically holds a jump table address;
 *        can be freely modified
-*   A2 = 
+*   A2 = holds a SP address used to return to IO directly;
+*        ask before modifying
 *   A3 = 
 *   A4 = 
-*   A5 = 
-*   A6 = 
+*   A5 = line counter; ask before modifying
+*   A6 = address pointer for line; ask before modifying
 *   A7 = stack pointer; DO NOT MODIFY
 
 
@@ -68,7 +72,8 @@ sline_count             DC.L    0
 readFromFile
 ; reads a word (2 bytes) from the test file in memory
 ; A6 points to the current instruction in the test file
-
+    MOVE.W      (A6)+,D3
+    RTS
 
 
     
@@ -103,9 +108,9 @@ D_MODE_FLAGS          DS.W    1
 * 11: Immediate                                              *
 * 12: unused                                                 *
 * 13: unused                                                 *
-* 14: unused                                                 *
-* 15: unused                                                 *
-* 16: unused                                                 *
+* 14: instruction archetype number                           *
+* 15: instruction archetype number                           *
+* 16: instruction archetype number                           *
 *                                                            *
 * Dest Mode: 11 10 9  8  7  6  5  4  3  2  1  0              *
 * MOVE:     %0  0  0  1  1  1  1  1  1  1  1  1              *
@@ -154,7 +159,7 @@ checkMode
     ; if the flag is 0, the instruction doesn't use the arg
     ; note: this indicates whether an instruction that CAN use an arg doesn't do so;
     ; we aren't checking instructions that never have an arg type
-    ; ex: NOT never has a source arg
+    ; ex: NOT never has a source arg, so it won't call this function
     BNE         checkMode_1
     ; therefore, we can just return
     RTS
@@ -189,6 +194,8 @@ checkMode_Bad
 **         instruction reference pointers/offsets         **
 ************************************************************
 getOpcodeSize
+; TODO: check for 11, which is invalid in most cases
+; for some opcodes, like ASd, it's legal
     ; returns bits 7-6 of an opcode, which is usually size
     ; possible returns: 00 - .B
     ;                   01 - .W
@@ -204,10 +211,7 @@ getOpcodeSize
 invalidOpcode	
 	PRINT           <Error: Invalid opcode! >
 	PRINT           <(this instruction is not supported)>,ENDL
-*	ILLEGAL
-	
-	; TODO: return to IO opcode reader func from here
-	
+
     ; to avoid memory leaks with the stack, I need to reset
 	; its ptr to what it was when findOpcodeMain was called
 	MOVEA   A2,SP
@@ -217,7 +221,6 @@ invalidOpcode
 	; the return address
 ;```
 	RTS
-*	STOP        #$DEAD
 ; <instr_name>.<instr_size>(tab)(tab)<arg2(source)>,<arg1(dest)>
 
 ; TODO: documentation
@@ -253,14 +256,22 @@ printLineStart
         ; print the memory address of the current line
         ;```
         ; TODO: make sure this prints out 8 chars (not 4 for the address)
-        PRINTN  A6.L,#16
+        PRINTN  A6,#16
         ; print spacing
         PRINT   <  >
         
         
         
         
-    ENDC
+*    ENDC
+
+
+
+
+
+
+
+
 
 
 
