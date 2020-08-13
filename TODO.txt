@@ -1,0 +1,5 @@
+ctrl-f for TODO for unfinished tasks (not all inclusive)
+
+ctrl-f for ``` for possible error locations
+
+make sure to remove these in the final submission

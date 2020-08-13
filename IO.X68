@@ -1,12 +1,10 @@
     ORG $1000
-DEPENDENCY  SET     0
-    INCLUDE  "dependencies.x68"
     INCLUDE  "parseInstructionMain.x68"
 START 
 ************************************************************
 **                 main program entry                     **
 ************************************************************
-*A7 - the console window current line
+*A5 - the console window current line
 *A6 - our current memory location to read for the opcode requester
 
     PRINT   <Welcome to the PowerPC is Better 68k Disassembler>,ENDL
@@ -45,7 +43,7 @@ REPARSE                             ;REPARSE lets us smoothly run a dowhile loop
     ADD.B   #1,D2                   ;D3 is our current char index
 PARSE                               ;initial parse
     CMP.B   #'a',(A1)           
-    BGE     LOWERCASE_LETTER        ;all this shit is self explanatory
+    BGE     LOWERCASE_LETTER        ;all this is self explanatory
     CMP.B   #'A',(A1)           
     BGE     UPPERCASE_LETTER    
 PLAIN_NUMBER                    
@@ -76,8 +74,11 @@ SUB_printer
     MOVEA.L (A6),A6
     JMP     P_CONTINUE
 P_CLEARSCREEN
-    ADD     A5,(sline_count)
+    LEA     sline_count,A1
+    MOVE.L  (A1),A1
+    ADDA.L  A5,A1
     MOVE.L  #0,A5
+    MOVE.L  A1,(sline_count)
     PRINT   <Please press enter to continue.>,ENDL
     RUNTRAP <#2>
 P_CONTINUE   
@@ -88,7 +89,6 @@ P_CONTINUE
     BGT     P_DONE                  ;jump to the ask-to-read-another-file printout and termination
 ;printing an instruction and updating our instruction pointer
     BSR     parseInstructionMain
-    ADD.L   #2,A6
 ;reading how full our screen is
     ADD.L   #1,A5                   ;update how many lines we have printed to the screen
     CMP.L   #31,A5                  ;if our screen is full we need to ask the user to press ender
@@ -102,6 +102,15 @@ P_DONE
     JMP     START
     
     END START
+
+
+
+
+
+
+
+
+
 
 
 
