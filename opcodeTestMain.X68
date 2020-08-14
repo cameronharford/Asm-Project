@@ -9,6 +9,7 @@ DEPENDENCY  SET 0
     INCLUDE     "parseInstructionMain.X68"
 START:
     ; D0 should have the 16 bit opcode (may change this later)
+    PRINT   <"SPACE TEST            ">
     PRINT   <Start of test>,ENDL
     
 *    MOVE.W  #$4E71,D0 * NOP, working
@@ -54,13 +55,13 @@ loopend
 * Put variables and constants here
 ADDBYTES    DC.W    $D202 ; ADD.B
             DC.W    $4E71 ; NOP
-            DC.W    $92C1 ; ADDA
-            DC.W    $B240 ; CMP
-            DC.W    $4440 ; NEG
-            DC.W    $3652 ; MOVEA
+*            DC.W    $92C1 ; ADDA
+*            DC.W    $B240 ; CMP
+*            DC.W    $4440 ; NEG
+*            DC.W    $3652 ; MOVEA
             DC.W    $48A7 ; MOVEM
-            DC.W    $8451 ; OR
-            DC.W    $E6D9 ; ROR
+*            DC.W    $8451 ; OR
+*            DC.W    $E6D9 ; ROR
             DC.W    $E2D9 ; LSR
             DC.W    $E32A ; LSL
 *            DC.W    $ ; 
@@ -70,6 +71,9 @@ ADDBYTES    DC.W    $D202 ; ADD.B
 *            DC.W    $ ; 
             DC.W    $FFFF ; END
     END    START        ; last line of source
+
+
+
 
 
 

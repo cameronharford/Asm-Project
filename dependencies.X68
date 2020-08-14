@@ -1,7 +1,3 @@
-; This handles the multiple definitions problem
-*    IFEQ    DEPENDENCY
-*DEPENDENCY  SET     1
-
 	    INCLUDE     "print.X68"
         INCLUDE		"isolateBits.X68"
 	    INCLUDE		"calcJmpOffset.X68"
@@ -259,11 +255,8 @@ printLineStart
         PRINTN  A6,#16
         ; print spacing
         PRINT   <  >
-        
-        
-        
-        
-*    ENDC
+
+
 
 
 

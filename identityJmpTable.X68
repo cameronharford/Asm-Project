@@ -1,7 +1,4 @@
-; Multiple dependencies fix
-
-	INCLUDE		"dependencies.X68"
-*    ORG         $1800
+    INCLUDE		"dependencies.X68"
 
 ; jump table for bits 15-12 of an instruction opcode
 ; NOPs are used for padding because jumps to invalidOpcode
@@ -37,19 +34,19 @@ firstJmpTable
 ; if 8-6 is 001 (indicating mode is addr reg) then it's MOVEA
 moveByte     
 	; Move Byte
-	DEBUG_PRINT <move byte>,ENDL
+	DEBUG_PRINT <move byte >
 	MOVEQ   #1,D5
     RTS
 
 moveLong  
 	; Move Long
-	DEBUG_PRINT <move long>,ENDL
+	DEBUG_PRINT <move long >
 	MOVEQ   #1,D5
     RTS
     
 moveWord  
 	; Move Word
-	DEBUG_PRINT <move word>,ENDL
+	DEBUG_PRINT <move word >
 	MOVEQ   #1,D5
     RTS
 
@@ -110,28 +107,28 @@ code0100
 
 ; Instruction-specific subroutines
 sub_not
-	DEBUG_PRINT <not>,ENDL
+	DEBUG_PRINT <not >
 	MOVEQ       #8,D5
     RTS
 sub_nop
-	PRINT       <nop>,ENDL
+	PRINT       <nop >,ENDL
 	MOVEA       A2,SP
 	RTS
 sub_rts
-	DEBUG_PRINT <rts>,ENDL
+	DEBUG_PRINT <rts >,ENDL
 	MOVEA       A2,SP
 	RTS
 sub_jsr
-	DEBUG_PRINT <jsr>,ENDL
-	MOVEQ   #9,D5
+	DEBUG_PRINT <jsr >
+	MOVEQ       #9,D5
     RTS    
 sub_movem
-	DEBUG_PRINT <movem>,ENDL
-	MOVEQ   #2,D5
+	DEBUG_PRINT <movem >
+	MOVEQ       #2,D5
     RTS
 sub_lea
-	DEBUG_PRINT <lea>,ENDL
-	MOVEQ   #7,D5
+	DEBUG_PRINT <lea >
+	MOVEQ       #7,D5
     RTS
 
 
@@ -189,17 +186,17 @@ branchJmpTable
 	JMP			sub_ble
 
 sub_bra
-    DEBUG_PRINT <bra>,ENDL
-    STOP		#$0110
+    DEBUG_PRINT <bra >
+    RTS
 sub_beq
-    DEBUG_PRINT <beq>,ENDL
-    STOP		#$0110
+    DEBUG_PRINT <beq >
+    RTS
 sub_bgt
-    DEBUG_PRINT <bgt>,ENDL
-    STOP		#$0110
+    DEBUG_PRINT <bgt >
+    RTS
 sub_ble
-    DEBUG_PRINT <ble>,ENDL
-    STOP		#$0110
+    DEBUG_PRINT <ble >
+    RTS
 
 ************************************************************
 **                     DIVU instruction                   **
@@ -213,7 +210,7 @@ code1000
 	BNE         invalidOpcode
 	; we know the input is DIVU, so do something now....
 	
-    DEBUG_PRINT <divu>,ENDL
+    DEBUG_PRINT <divu >
 	MOVEQ       #6,D5
     RTS
 
@@ -232,7 +229,7 @@ subIdentify
     
 	; do stuff
 	
-    DEBUG_PRINT <sub>,ENDL
+    DEBUG_PRINT <sub >
     RTS
     
     
@@ -262,12 +259,12 @@ code1100
 	; so AND will be determined by ruling out other opcodes
 	
 sub_and
-    DEBUG_PRINT <and>,ENDL
+    DEBUG_PRINT <and >
 	MOVEQ   #3,D5
     RTS
 
 sub_muls
-    DEBUG_PRINT <muls>,ENDL
+    DEBUG_PRINT <muls >
 	MOVEQ   #6,D5
     RTS
 
@@ -280,7 +277,7 @@ addIdentify
     
     ; do stuff with ADD
     
-    DEBUG_PRINT <add>,ENDL
+    DEBUG_PRINT <add >
     RTS
 
 
@@ -317,13 +314,13 @@ shiftIdentify
     BNE         typeTwo
 typeOne
     ; for type one, we need to check bits 10-9
-    DEBUG_PRINT <type 1 >
+    DEBUG_PRINT <type one >
     isoBitsM    D4,#10,#9
 	MOVEQ       #4,D5
     BRA         calcJmpOffset
 typeTwo
     ; type two checks bits 4-3
-    DEBUG_PRINT <type 2 >
+    DEBUG_PRINT <type two >
     isoBitsM    D4,#4,#3
 	MOVEQ       #5,D5
     BRA         calcJmpOffset
@@ -337,14 +334,15 @@ shiftJmpTable
 	JMP			invalidOpcode		* ROd * not required
 	
 sub_asd
-    DEBUG_PRINT <asr/asl>,ENDL
-	MOVEQ       #1,D5
+    DEBUG_PRINT <asr/asl >
     RTS
 sub_lsd
-    DEBUG_PRINT <lsr/lsl>,ENDL
+    DEBUG_PRINT <lsr/lsl >
     RTS
     
     
+
+
 
 
 
