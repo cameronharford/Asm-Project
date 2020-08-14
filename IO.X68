@@ -141,7 +141,7 @@ P_CONTINUE
     ;
     ; KILL ME
     
-    ADD.L   #1,A6
+    ;ADD.L   #1,A6
     ; KILL ME
     ;
     ;
