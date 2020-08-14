@@ -6,6 +6,8 @@ filename dc.b 'testimage.bin',0
 
 START
 
+;JMP WELCOME
+
 SUB_DEBUG
     LEA     filename,A1
     RUNTRAP <#13>
@@ -24,11 +26,13 @@ SUB_DEBUG
 ************************************************************
 *A5 - the console window current line
 *A6 - our current memory location to read for the opcode requester
+WELCOME
     MOVE.L  #$FF00,D1              ;clear the screen in case the program is being re-run
     RUNTRAP <#11>
     PRINT   <'Welcome to the PowerPC is Better 68k Disassembler'>,ENDL
     PRINT   <'Yum Yum Instructions.'>,ENDL
-    
+
+GET_ADDRESSES
 ;get starting address
     PRINT   <'Enter a valid and even 8-char hexadecimal starting address: '>
     LEA     asciiToHexBuffer,A1
@@ -44,7 +48,12 @@ SUB_DEBUG
     MOVE.B  #8,D0                   ;we want to parse 8 chars to hex
     JSR     SUB_loadHexString
     MOVE.L  D1,(endAddress)
-    JSR     SUB_printer   
+    CMP.L   (startAddress),D1
+    BGE     SUB_printer             ;if starting address is less than or equal to ending address then begin the program
+    PRINT   <'Starting address must be less than or equal to ending address. '>,ENDL
+    PRINT   <'Press Enter to try again.'>
+    RUNTRAP <#5>
+    JMP     WELCOME 
     
 ************************************************************
 **                convert ascii to hex                    **
@@ -160,10 +169,7 @@ P_CONTINUE
     CMP.L   #$10,D1
     BGE     freeHongKong
     PRINT   <'0'>
-    CMP.L   #$1,D1
-    BGE     freeHongKong
-    PRINT   <'0'>
-freeHongKong
+freeHongKong 
     MOVE.L  #16,D2
     RUNTRAP <#15>
     PRINT <' '>
@@ -173,7 +179,7 @@ freeHongKong
     ;
     ; KILL ME
     
-    ;ADD.L   #1,A6
+    ADD.L   #2,A6
     ; KILL ME
     ;
     ;
@@ -187,13 +193,14 @@ freeHongKong
 P_DONE
     PRINT   <'Load another datafile and press y to continue'>,ENDL
     PRINT   <'Press any other key to exit'>,ENDL
-    MOVE.B  #5,D0
-    TRAP    #15
+    RUNTRAP <#5>
     CMP.B   #'y',D1
     BEQ     START
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END START
+
+
 
 
 
