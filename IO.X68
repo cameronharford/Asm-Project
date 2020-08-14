@@ -145,6 +145,29 @@ P_CONTINUE
     BGT     P_DONE                  ;jump to the ask-to-read-another-file printout and termination
 ;printing an instruction and updating our instruction pointer
     BSR     SUB_printRegister       ;print the value of A6 out to console 
+    
+    ;
+    ;
+    MOVE.L  (A6),D1
+    LSR.L   #8,D1
+    LSR.L   #8,D1
+    CMP.L   #$1000,D1
+    BGE     freeHongKong
+    PRINT   <'0'>
+    CMP.L   #$100,D1
+    BGE     freeHongKong
+    PRINT   <'0'>
+    CMP.L   #$10,D1
+    BGE     freeHongKong
+    PRINT   <'0'>
+    CMP.L   #$1,D1
+    BGE     freeHongKong
+    PRINT   <'0'>
+freeHongKong
+    MOVE.L  #16,D2
+    RUNTRAP <#15>
+    PRINT <' '>
+    
     BSR     parseInstructionMain
     ;
     ;
