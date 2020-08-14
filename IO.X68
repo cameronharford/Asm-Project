@@ -6,7 +6,8 @@ START
 ************************************************************
 *A5 - the console window current line
 *A6 - our current memory location to read for the opcode requester
-
+    MOVE.L  #$FF00,D1              ;clear the screen in case the program is being re-run
+    RUNTRAP <#11>
     PRINT   <'Welcome to the PowerPC is Better 68k Disassembler'>,ENDL
     PRINT   <'Bla bla bla bla bla bla bla...'>,ENDL
     
@@ -62,7 +63,39 @@ LOOP_TAIL
     ADD.L   #1,A1                   ;Iterate the string address by one byte to move on to the next char
     CMP.B   D0,D2       
     BLT     REPARSE             
-    RTS         
+    RTS
+
+************************************************************
+**                  print register value                  **
+************************************************************
+*A6 - the register we are printing out
+
+*D3 - loop index
+*D2 - partial value storage
+*D1 - char storage
+SUB_printRegister
+    CLR     D3
+    MOVE.L  A6,D2
+PR_LOOP
+    MOVE.L  D2,D1                   ;so we don't have a ton of LSR shifting. this will allow us to preserve the current state of how far we've shifted while still preserving A6
+    LSR.L   #4,D2                   ;shift D1 right by 4 bits to get ready for the next char
+    AND.L   #$F,D1                  ;extract the char from D2
+PR_NUM    
+    CMP.B   #'9',D1
+    BGT     PR_LETTER
+    ADD.B   #'0',D1
+    RUNTRAP <#6>
+    JMP     PR_LOOP_TAIL
+PR_LETTER    
+    ADD.B   #55,D1    ;'A' - 10
+    RUNTRAP <#6>
+PR_LOOP_TAIL
+    ADD.B   #1,D3
+    CMP.B   #8,D3
+    BLT     PR_LOOP
+    PRINT   <' '>
+    RTS
+
 ************************************************************
 **                    INSTRUCTION PRINTER                 **
 ************************************************************
@@ -84,10 +117,11 @@ P_CLEARSCREEN
 P_CONTINUE   
 ;checking if we are at the end of our file
     LEA     endAddress,A0
-;```
     CMP.L   (A0),A6                 ;check if we are done reading the file
     BGT     P_DONE                  ;jump to the ask-to-read-another-file printout and termination
 ;printing an instruction and updating our instruction pointer
+    
+    BSR     SUB_printRegister       ;print the value of A6 out to console 
     BSR     parseInstructionMain
 ;reading how full our screen is
     ADD.L   #1,A5                   ;update how many lines we have printed to the screen
@@ -95,13 +129,16 @@ P_CONTINUE
     BEQ     P_CLEARSCREEN
     JMP     P_CONTINUE              ;otherwise just continue reading
 P_DONE
-    PRINT   <'Load another datafile and hit enter to continue. Otherwise exit the program externally.'>
-    RUNTRAP <#2>
-    MOVE.L  #$FF00,D1
-    RUNTRAP <#11>
-    JMP     START
-    
+    PRINT   <'Load another datafile and press y to continue'>,ENDL
+    PRINT   <'Press any other key to exit'>,ENDL
+    MOVE.B  #5,D0
+    TRAP    #15
+    CMP.B   #'y',D1
+    BEQ     START
+    PRINT   <'Program halted.'>,ENDL
+    RUNTRAP <#9>
     END START
+
 
 
 
