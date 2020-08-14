@@ -118,7 +118,7 @@ P_CLEARSCREEN
     ADDA.L  A5,A1
     MOVE.L  #0,A5
     MOVE.L  A1,(sline_count)
-    PRINT   <'Please press enter to continue.'>,ENDL
+    PRINT   <'Please press enter to continue.'>
     RUNTRAP <#2>
 P_CONTINUE   
 ;checking if we are at the end of our file
@@ -140,7 +140,7 @@ P_CONTINUE
     
 ;reading how full our screen is
     ADD.L   #1,A5                   ;update how many lines we have printed to the screen
-    CMP.L   #30,A5                  ;if our screen is full we need to ask the user to press ender
+    CMP.L   #31,A5                  ;if our screen is full we need to ask the user to press ender
     BEQ     P_CLEARSCREEN
     JMP     P_CONTINUE              ;otherwise just continue reading
 P_DONE
