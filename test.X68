@@ -6,7 +6,7 @@
     INCLUDE     "dependencies.x68"
     
 START 
-    PRINT       <Welcome to the PowerPC is Better 68k Disassembler>,ENDL
+    PRINT       <'Welcome to the PowerPC is Better 68k Disassembler'>,ENDL
     SIMHALT
     
     END         START

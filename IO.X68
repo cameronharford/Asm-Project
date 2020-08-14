@@ -7,11 +7,11 @@ START
 *A5 - the console window current line
 *A6 - our current memory location to read for the opcode requester
 
-    PRINT   <Welcome to the PowerPC is Better 68k Disassembler>,ENDL
-    PRINT   <Bla bla bla bla bla bla bla...>,ENDL
+    PRINT   <'Welcome to the PowerPC is Better 68k Disassembler'>,ENDL
+    PRINT   <'Bla bla bla bla bla bla bla...'>,ENDL
     
 ;get starting address
-    PRINT   <Enter a valid and even 8-char hexadecimal starting address: >
+    PRINT   <'Enter a valid and even 8-char hexadecimal starting address: '>
     LEA     asciiToHexBuffer,A1
     RUNTRAP <#2>
     MOVE.B  #8,D0                   ;we want to parse 8 chars to hex
@@ -19,7 +19,7 @@ START
     MOVE.L  D1,(startAddress)
     
 ;get ending address
-    PRINT   <Enter a valid and even 8-char hexadecimal ending address: >
+    PRINT   <'Enter a valid and even 8-char hexadecimal ending address: '>
     LEA     asciiToHexBuffer,A1
     RUNTRAP <#2>
     MOVE.B  #8,D0                   ;we want to parse 8 chars to hex
@@ -79,7 +79,7 @@ P_CLEARSCREEN
     ADDA.L  A5,A1
     MOVE.L  #0,A5
     MOVE.L  A1,(sline_count)
-    PRINT   <Please press enter to continue.>,ENDL
+    PRINT   <'Please press enter to continue.'>,ENDL
     RUNTRAP <#2>
 P_CONTINUE   
 ;checking if we are at the end of our file
@@ -95,7 +95,7 @@ P_CONTINUE
     BEQ     P_CLEARSCREEN
     JMP     P_CONTINUE              ;otherwise just continue reading
 P_DONE
-    PRINT   <Load another datafile and hit enter to continue. Otherwise exit the program externally.>
+    PRINT   <'Load another datafile and hit enter to continue. Otherwise exit the program externally.'>
     RUNTRAP <#2>
     MOVE.L  #$FF00,D1
     RUNTRAP <#11>

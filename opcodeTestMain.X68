@@ -9,8 +9,8 @@ DEPENDENCY  SET 0
     INCLUDE     "parseInstructionMain.X68"
 START:
     ; D0 should have the 16 bit opcode (may change this later)
-    PRINT   <"SPACE TEST            ">
-    PRINT   <Start of test>,ENDL
+    PRINT   <'"SPACE TEST            "'>
+    PRINT   <'Start of test'>,ENDL
     
 *    MOVE.W  #$4E71,D0 * NOP, working
 *    MOVE.W  #$6000,D0 * BRA, working
@@ -49,7 +49,7 @@ loopstart
     MOVEM   (SP)+,A4/D6
     BRA     loopstart
 loopend
-    PRINT   <end of test>,ENDL
+    PRINT   <'end of test'>,ENDL
     SIMHALT             ; halt simulator
 
 * Put variables and constants here

@@ -183,7 +183,7 @@ checkMode_2
 checkMode_Bad
 ; loc for illegal modes
 ; do stuff
-    PRINT       <Illegal arg>
+    PRINT       <'Illegal arg'>
     RTS
 
 ************************************************************
@@ -205,8 +205,8 @@ getOpcodeSize
 **              error print-outs for program              **
 ************************************************************ 
 invalidOpcode	
-	PRINT           <Error: Invalid opcode! >
-	PRINT           <(this instruction is not supported)>,ENDL
+	PRINT           <'Error: Invalid opcode! '>
+	PRINT           <'(this instruction is not supported)'>,ENDL
 
     ; to avoid memory leaks with the stack, I need to reset
 	; its ptr to what it was when findOpcodeMain was called
@@ -254,7 +254,7 @@ printLineStart
         ; TODO: make sure this prints out 8 chars (not 4 for the address)
         PRINTN  A6,#16
         ; print spacing
-        PRINT   <  >
+        PRINT   <'  '>
 
 
 

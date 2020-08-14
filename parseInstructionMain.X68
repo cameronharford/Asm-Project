@@ -23,14 +23,14 @@ parseInstructionMain:
     BSR     getSrcMode
     
     ; comma separating args
-    PRINT   <,>
+    PRINT   <','>
     
     ; print dest arg
     BSR     getDestReg
     BSR     getDestMode
     
     ; endl
-    PRINT   <>,ENDL
+    PRINT   <''>,ENDL
     
 	RTS
 
@@ -76,48 +76,48 @@ instrTypeTable
 instrTypeOne
 
     ; print size first
-    DEBUG_PRINT <type  1 - >
+
     RTS
 
 instrTypeTwo
 ; for 
-	DEBUG_PRINT <type  2 - >
+
     RTS
     
 instrTypeThree
 ; for ADD, SUB, AND
 ; source mode is standard, dest arg is data reg, dest mode is direction and size
-    DEBUG_PRINT <type  3 - >
+
     RTS
 
 instrTypeFour
-    DEBUG_PRINT <type  4 - >
+
     RTS
 
 instrTypeFive
-    DEBUG_PRINT <type  5 - >
+
     RTS
 
 instrTypeSix
-    DEBUG_PRINT <type  6 - >
+
     RTS
 
 instrTypeSeven
-    DEBUG_PRINT <type  7 - >
+
     RTS
 
 instrTypeEight
-    DEBUG_PRINT <type  8 - >
+
     RTS
 
 instrTypeNine
-    DEBUG_PRINT <type  9 - >
+
     RTS
     
 instrTypeTen
 ; for branching (BRA/BEQ/BGT/BLE)
 ; TODO: add sanity check for displacement addr
-    DEBUG_PRINT <type 10 - >
+
     RTS
 
 getSrcMode
@@ -202,7 +202,7 @@ modeJmpTable111
     ; 111
     ; TODO: change to illegalArgs and make said function
     ; JMP     invalidOpcode ; should I instead print out illegal args?
-    DEBUG_PRINT <invalid arg>
+
     RTS
 
 
@@ -222,55 +222,55 @@ printRegA
    
 printAddress
 ; TODO
-    PRINT   <addr>
+    PRINT   <'addr'>
 
-*    PRINT   <(>
+*    PRINT   <'('>
 *    BSR     printRegA
-*    PRINT   <)>
+*    PRINT   <')'>
     RTS
    
 printAddrPostInc
 ; TODO
-    PRINT   <addr w/ postinc>
+    PRINT   <'addr w/ postinc'>
 
 *    BSR     printAddress
-*    PRINT   <+>
+*    PRINT   <'+'>
     RTS
 
 printAddrPreDec
 ; TODO
-    PRINT   <addr w/ predec>
+    PRINT   <'addr w/ predec'>
 
-*    PRINT   <->
+*    PRINT   <'-'>
 *    BSR     printAddress  
     RTS  
 
 printAddrDisp
-    PRINT   <addr w/ displacement>
+    PRINT   <'addr w/ displacement'>
     RTS
 
 printAddrIndex
-    PRINT   <addr w/ index>
+    PRINT   <'addr w/ index'>
     RTS
 
 printAbsShort
-    PRINT   <absolute short>
+    PRINT   <'absolute short'>
     RTS
 
 printAbsLong
-    PRINT   <absolute long>
+    PRINT   <'absolute long'>
     RTS
 
 printCounterDisp
-    PRINT   <counter w/ displacement>
+    PRINT   <'counter w/ displacement'>
     RTS
 
 printCounterIndex
-    PRINT   <counter w/ index>
+    PRINT   <'counter w/ index'>
     RTS
  
 printImmediate
-    PRINT   <immediate>
+    PRINT   <'immediate'>
     RTS
 
 
