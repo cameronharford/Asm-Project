@@ -1,6 +1,15 @@
     ORG $1000
     INCLUDE  "parseInstructionMain.x68"
 START 
+
+
+SUB_DEBUG
+    PRINT   <'Disassembler Debug Mode!'>,ENDL
+    MOVE.L  #$7000,(startAddress)
+    MOVE.L  #$7374,(endAddress)
+    JSR     SUB_printer 
+
+
 ************************************************************
 **                 main program entry                     **
 ************************************************************
@@ -26,7 +35,8 @@ START
     MOVE.B  #8,D0                   ;we want to parse 8 chars to hex
     JSR     SUB_loadHexString
     MOVE.L  D1,(endAddress)
-    JSR     SUB_printer
+    JSR     SUB_printer   
+    
 ************************************************************
 **                convert ascii to hex                    **
 ************************************************************

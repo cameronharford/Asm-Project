@@ -4,7 +4,7 @@
 * Date       : 08/10/2020
 * Description: Test file for Disassembler version 2
 *-----------------------------------------------------------
-  	  ORG    $1000
+  	  ORG    $7000
 START:                  ; first instruction of program
 
 NOP     NOP
