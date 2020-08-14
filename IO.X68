@@ -71,17 +71,23 @@ LOOP_TAIL
 *A6 - the register we are printing out
 
 *D3 - loop index
-*D2 - partial value storage
+*D2 - shift loop index
 *D1 - char storage
 SUB_printRegister
-    CLR     D3
-    MOVE.L  A6,D2
+    MOVE.L  #8,D3
 PR_LOOP
-    MOVE.L  D2,D1                   ;so we don't have a ton of LSR shifting. this will allow us to preserve the current state of how far we've shifted while still preserving A6
-    LSR.L   #4,D2                   ;shift D1 right by 4 bits to get ready for the next char
-    AND.L   #$F,D1                  ;extract the char from D2
+    MOVE.L  A6,D1
+    CLR     D2
+PR_SHIFTLOOP
+    ADD.L   #1,D2
+    CMP.B   D3,D2
+    BEQ     PR_NUM
+    LSR.L   #4,D1           ;shift the char we want down to the lowest nibble position
+    
+    JMP     PR_SHIFTLOOP
 PR_NUM    
-    CMP.B   #'9',D1
+    AND.L   #$F,D1
+    CMP.B   #9,D1
     BGT     PR_LETTER
     ADD.B   #'0',D1
     RUNTRAP <#6>
@@ -90,9 +96,9 @@ PR_LETTER
     ADD.B   #55,D1    ;'A' - 10
     RUNTRAP <#6>
 PR_LOOP_TAIL
-    ADD.B   #1,D3
-    CMP.B   #8,D3
-    BLT     PR_LOOP
+    SUB.B   #1,D3
+    CMP.B   #0,D3
+    BNE     PR_LOOP
     PRINT   <' '>
     RTS
 
@@ -120,12 +126,21 @@ P_CONTINUE
     CMP.L   (A0),A6                 ;check if we are done reading the file
     BGT     P_DONE                  ;jump to the ask-to-read-another-file printout and termination
 ;printing an instruction and updating our instruction pointer
-    
     BSR     SUB_printRegister       ;print the value of A6 out to console 
     BSR     parseInstructionMain
+    ;
+    ;
+    ; KILL ME
+    
+    ADD.L   #1,A6
+    ; KILL ME
+    ;
+    ;
+    ;
+    
 ;reading how full our screen is
     ADD.L   #1,A5                   ;update how many lines we have printed to the screen
-    CMP.L   #31,A5                  ;if our screen is full we need to ask the user to press ender
+    CMP.L   #30,A5                  ;if our screen is full we need to ask the user to press ender
     BEQ     P_CLEARSCREEN
     JMP     P_CONTINUE              ;otherwise just continue reading
 P_DONE
