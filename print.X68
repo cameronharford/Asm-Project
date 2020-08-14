@@ -15,8 +15,8 @@ TEXT    EQU     1
     SECTION     TEXT
     ORG         $3000
     SECTION     CODE
-*    ORG         CODE_LOC
-    ORG         $2000
+    ORG         CODE_LOC
+*    ORG         $2000
 
 * print the text string
 * use ENDL as second argument to add return and linefeed
@@ -24,7 +24,7 @@ PRINT   MACRO
     SECTION     TEXT
 MSG\@    DC.B    \1
     IFARG    2
-        IFC      '\2','ENDL'
+        IFC      \2,ENDL
             DC.B    $D,$A
         ENDC
     ENDC
@@ -41,14 +41,16 @@ MSG\@    DC.B    \1
 * print the number
 PRINTN    MACRO
     SECTION     CODE
-    MOVEM.L     D0-D2,-(SP)
+    MOVEM.L     D0-D1,-(SP)
     IFNC '\1','D1'          if some register other than D1
         MOVE.L    \1,D1       put number to display in D1
     ENDC
     MOVE.B  #3,D0
     TRAP    #15             display number in D1
-    MOVEM.L (SP)+,D0-D2
+    MOVEM.L (SP)+,D0-D1
     ENDM
+
+
 
 
 

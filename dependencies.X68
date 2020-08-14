@@ -15,10 +15,8 @@
 *   D2 = randomly used; can be freely modified
 *   D3 = 
 *   D4 = holds 16-bit opcode; ask before modifying
-*   D5 = holds first extension for instruction, if it exists;
-*        can be modified if necessary
-*   D6 = holds other extension for instruction, if it exists;
-*        can be modified if necessary
+*   D5 = 
+*   D6 = 
 *   D7 = 
 *   A0 =  
 *   A1 = randomly used, typically holds a jump table address;
@@ -53,8 +51,6 @@
 * while this may seem obvious when you're given a constant   *
 * for a memory address like with $A000, it's important to    *
 * remember this logic applies to your variables as well.     *
-* When accessing the opcode extension variables INSTR_EXT_1  *
-* and INSTR_EXT_2, keep this fact in mind.                   *
 **************************************************************
 
 
@@ -70,12 +66,11 @@ readFromFile
 ; A6 points to the current instruction in the test file
     MOVE.W      (A6)+,D3
     RTS
-
-
     
 
-S_MODE_FLAGS          DS.W    1
-D_MODE_FLAGS          DS.W    1
+S_MODE_FLAGS            DS.W    1
+D_MODE_FLAGS            DS.W    1
+INSTR_TYPE              DC.B    0
 **************************************************************
 * FLAG Documentation:                                        *
 * -When we identify an instruction name, such as MOVE, a     *
@@ -99,44 +94,47 @@ D_MODE_FLAGS          DS.W    1
 * 6: Address w/ Index                                        *
 * 7: Absolute Short                                          *
 * 8: Absolute Long                                           *
-* 9: Program Counter w/ Displacement                         *
-* 10: Program Counter w/ Index                               *
+* 9: Program Counter w/ Displacement (not required)          *
+* 10: Program Counter w/ Index       (not required)          *
 * 11: Immediate                                              *
 * 12: unused                                                 *
 * 13: unused                                                 *
-* 14: instruction archetype number                           *
-* 15: instruction archetype number                           *
-* 16: instruction archetype number                           *
+* 14: unused                                                 *
+* 15: unused                                                 *
+* 16: unused                                                 *
 *                                                            *
 * Dest Mode: 11 10 9  8  7  6  5  4  3  2  1  0              *
-* MOVE:     %0  0  0  1  1  1  1  1  1  1  1  1              *
+* MOVE:     %0  0  0  1  1  1  1  1  1  1  1  1              *done
 * MOVEM:    %0  0  0  1  1  1  1  1  1  1  1  0              *
 * ADD:      %0  0  0  1  1  1  1  1  1  1  1  1              *
-* SUB:      %0  0  0  1  1  1  1  1  1  1  1  1              *
+* ADD alt:  %0  0  0  1  1  1  1  1  1  1  1  1              *
+* SUB:      same as add                                      *
+* SUB alt:  same as add alt                                  *
 * AND:      %0  0  0  1  1  1  1  1  1  1  1  1              *
-* MULS:     %0  1  1  1  1  1  1  1  1  1  1  1              *
-* DIVU:     %0  1  1  1  1  1  1  1  1  1  1  1              *
+* AND alt:  %0  0  0  1  1  1  1  1  1  1  1  1              *
+* MULS:     %0  0  0  1  1  1  1  1  1  1  1  1              *
+* DIVU:     %0  0  0  1  1  1  1  1  1  1  1  1              *
 * LEA:      never has a destination mode other than 111      *
-* NOT:      %0  1  1  1  1  1  1  1  1  1  1  1              *
+* NOT:      %0  0  0  1  1  1  1  1  1  1  1  1              *
 *   -technically, NOT doesn't have a dest mode, but since    *
 *    size is variable, I use this method to check
-* LSd:      %0  1  1  1  1  1  1  1  1  1  1  1              *
-* ASd:      %0  1  1  1  1  1  1  1  1  1  1  1              *
-* JSR:      %0  1  1  1  1  1  1  1  1  1  1  1              *                               
+* LSd:      %0  0  0  1  1  1  1  1  1  1  1  1              *
+* ASd:      %0  0  0  1  1  1  1  1  1  1  1  1              *
+* JSR:      dest is always A7/SP (mode 010, An 111)          *
 *                                                            *
 * Src Mode:  11 10 9  8  7  6  5  4  3  2  1  0              *
-* MOVE:     %1  1  1  1  1  1  1  1  1  1  1  1              *
-* MOVEM:    %1  1  1  1  1  1  1  1  1  1  1  1              *
-* ADD:      %1  1  1  1  1  1  1  1  1  1  1  1              *
-* SUB:      %1  1  1  1  1  1  1  1  1  1  1  1              *
-* AND:      %1  1  1  1  1  1  1  1  1  1  1  1              *
-* MULS:     %1  1  1  1  1  1  1  1  1  1  1  1              *
-* DIVU:     %1  1  1  1  1  1  1  1  1  1  1  1              *
-* LEA:      %1  1  1  1  1  1  1  1  1  1  1  1              *
+* MOVE:     %1  0  0  1  1  1  1  1  1  1  1  1              *
+* MOVEM:    %1  0  0  1  1  1  1  1  1  1  1  1              *
+* ADD:      %1  0  0  1  1  1  1  1  1  1  1  1              *
+* SUB:      %1  0  0  1  1  1  1  1  1  1  1  1              *
+* AND:      %1  0  0  1  1  1  1  1  1  1  1  1              *
+* MULS:     %1  0  0  1  1  1  1  1  1  1  1  1              *
+* DIVU:     %1  0  0  1  1  1  1  1  1  1  1  1              *
+* LEA:      %1  0  0  1  1  1  1  1  1  1  1  1              *
 * NOT:      no source used                                   *
-* LSd:      %1  1  1  1  1  1  1  1  1  1  1  1              *
-* ASd:      %1  1  1  1  1  1  1  1  1  1  1  1              *
-* JSR:      no source used                                   * 
+* LSd:      %1  0  0  1  1  1  1  1  1  1  1  1              *
+* ASd:      %1  0  0  1  1  1  1  1  1  1  1  1              *
+* JSR:      %0  0  0  1  1  1  1  1  0  0  0  0              *done 
 *                                                            *
 *                                                            *
 * Note: we don't have a special case for instructions that   *
@@ -144,7 +142,6 @@ D_MODE_FLAGS          DS.W    1
 * handled in the identityJmpTable method because it's easier *
 * and faster than checking every time here.                  *
 **************************************************************
-
 
 
 checkMode
@@ -247,14 +244,6 @@ IMMCMP      MACRO
             \3  \4
         ENDC
         ENDM
-        
-printLineStart
-        ; print the memory address of the current line
-        ;```
-        ; TODO: make sure this prints out 8 chars (not 4 for the address)
-        PRINTN  A6,#16
-        ; print spacing
-        PRINT   <'  '>
 
 
 
