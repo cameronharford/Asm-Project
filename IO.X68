@@ -9,7 +9,7 @@ START
     MOVE.L  #$FF00,D1              ;clear the screen in case the program is being re-run
     RUNTRAP <#11>
     PRINT   <'Welcome to the PowerPC is Better 68k Disassembler'>,ENDL
-    PRINT   <'Bla bla bla bla bla bla bla...'>,ENDL
+    PRINT   <'Yum Yum Instructions.'>,ENDL
     
 ;get starting address
     PRINT   <'Enter a valid and even 8-char hexadecimal starting address: '>
@@ -74,23 +74,22 @@ LOOP_TAIL
 *D2 - shift loop index
 *D1 - char storage
 SUB_printRegister
-    MOVE.L  #8,D3
+    MOVE.L  #8,D3           ;amount of chars to print
 PR_LOOP
     MOVE.L  A6,D1
     CLR     D2
 PR_SHIFTLOOP
     ADD.L   #1,D2
     CMP.B   D3,D2
-    BEQ     PR_NUM
+    BEQ     PR_NUM          ;move on when we've shifted enough
     LSR.L   #4,D1           ;shift the char we want down to the lowest nibble position
-    
     JMP     PR_SHIFTLOOP
 PR_NUM    
-    AND.L   #$F,D1
-    CMP.B   #9,D1
+    AND.L   #$F,D1          ;extract lowest nibble
+    CMP.B   #9,D1           ;find out if its 0-9 or a-f
     BGT     PR_LETTER
-    ADD.B   #'0',D1
-    RUNTRAP <#6>
+    ADD.B   #'0',D1         ;convert to ascii
+    RUNTRAP <#6>            ;print the char
     JMP     PR_LOOP_TAIL
 PR_LETTER    
     ADD.B   #55,D1    ;'A' - 10
