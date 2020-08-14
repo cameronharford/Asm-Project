@@ -1,9 +1,18 @@
     ORG $1000
-    INCLUDE  "parseInstructionMain.x68"
-START 
+    INCLUDE  "parseInstructionMain.x68" 
+    
+    
+filename dc.b 'testimage.bin',0
 
+START
 
 SUB_DEBUG
+    LEA     filename,A1
+    RUNTRAP <#13>
+    RUNTRAP <#51>
+    MOVE.L  #$7000,A1
+    MOVE.L  #$1000,D2
+    RUNTRAP <#53>
     PRINT   <'Disassembler Debug Mode!'>,ENDL
     MOVE.L  #$7000,(startAddress)
     MOVE.L  #$7374,(endAddress)
@@ -162,8 +171,6 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END START
-
-
 
 
 
