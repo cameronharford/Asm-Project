@@ -157,10 +157,12 @@ modeJmpTable
     ; illegal for 
     
     JMP         printAddrPreDec ; #100    ; Address w/ Predec, -(An)
-    
+
+; NOT NEEDED    
     JMP         printAddrDisp ; Address w/ Displacement, (d16,An,Xn)
     ; illegal for
     
+; NOT NEEDED    
     JMP         printAddrIndex ; Address w/ Index (d8,An,Xn)
     ; illegal for 
     
@@ -222,60 +224,129 @@ printRegA
    
 printAddress
 ; TODO
-    PRINT   <'addr'>
+*    PRINT   <'addr'>
 
-*    PRINT   <'('>
-*    BSR     printRegA
-*    PRINT   <')'>
+    PRINT   <'('>
+    BSR     printRegA
+    PRINT   <')'>
     RTS
    
 printAddrPostInc
 ; TODO
-    PRINT   <'addr w/ postinc'>
+*    PRINT   <'addr w/ postinc'>
 
-*    BSR     printAddress
-*    PRINT   <'+'>
+    BSR     printAddress
+    PRINT   <'+'>
     RTS
 
 printAddrPreDec
 ; TODO
-    PRINT   <'addr w/ predec'>
+*    PRINT   <'addr w/ predec'>
 
-*    PRINT   <'-'>
-*    BSR     printAddress  
+    PRINT   <'-'>
+    BSR     printAddress  
     RTS  
 
+; NOT NEEDED
 printAddrDisp
-    PRINT   <'addr w/ displacement'>
+*    PRINT   <'addr w/ displacement'>
     RTS
 
+; NOT NEEDED
 printAddrIndex
-    PRINT   <'addr w/ index'>
+*    PRINT   <'addr w/ index'>
     RTS
 
 printAbsShort
-    PRINT   <'absolute short'>
+*    PRINT   <'absolute short'>
+    PRINT   <'$'>
+    
+    BSR readFromFile
+    printReg
+    
     RTS
 
 printAbsLong
-    PRINT   <'absolute long'>
+*    PRINT   <'absolute long'>
+    PRINT   <'$'>
+    
+    BSR readFromFile
+    ; Print Address
+    printReg
+    BSR readFromFile
+    ; Print Address
+    printReg
+    
     RTS
 
+; NOT NEEDED
 printCounterDisp
-    PRINT   <'counter w/ displacement'>
+*    PRINT   <'counter w/ displacement'>
     RTS
 
+; NOT NEEDED
 printCounterIndex
-    PRINT   <'counter w/ index'>
+*    PRINT   <'counter w/ index'>
     RTS
  
 printImmediate
-    PRINT   <'immediate'>
+*    PRINT   <'immediate'>
+    PRINT   <'#'>
+    
+    BSR     getOpcodeSize   ; Puts binary for instruction size in D0 (00 for byte, 01 for word, 10 for long)
+    BSR     readFromFile    
+    ; Print value
+    printReg
+    
+    CMP.B   #$2,D0          ; If size bits indicate long, read another word from memory
+    BNE     DONE
+    
+    BSR     readFromFile   
+    ; Print value
+    printReg
+    
+DONE    RTS
+
+*   Prints the contents of a register in hex (Slightly modified from function in IO)
+*   For comments on what each line does, see IO's function
+*   D3 - Register being printed
+*   D5 - Loop index
+*   D2 - shift loop index
+*   D1 - Char storage
+
+printReg
+    MOVE.L  #8,D5
+LOOP
+    MOVE.L  D3,D1
+    CLR     D2
+SHIFTLOOP
+    ADD.L   #1,D2
+    CMP.B   D5,D2
+    BEQ     NUM
+    LSR.L   #4,D1
+    JMP     SHIFTLOOP
+NUM
+    AND.L   #$F,D1
+    CMP.B   #9,D1
+    BGT     LETTER
+    ADD.B   #'0',D1
+    RUNTRAP <#6>
+    JMP     LOOP_TAIL
+LETTER
+    ADD.B   #55,D1
+    RUNTRAP <#6>
+LOOP_TAIL
+    SUB.B   #1,D5
+    CMP.B   #0,D5
+    BNE     LOOP
+    PRINT   <' '>
     RTS
 
 
 ; TODO
 ; should I print as decimal or hex?
+
+
 
 
 
