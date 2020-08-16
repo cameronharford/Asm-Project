@@ -71,7 +71,6 @@ instrTypeTable
 ; 9 - JSR
 ; 10 - BRA/BEQ/BGT/BLE
 
-; source arg format is almost universal, exceptions being BRA/BEQ/BGT/BLE, RTS, NOP
 
 instrTypeOne
 
@@ -87,7 +86,9 @@ instrTypeTwo
 instrTypeThree
 ; for ADD, SUB, AND
 ; source mode is standard, dest arg is data reg, dest mode is direction and size
-
+    
+    ; get direction bit to determine the instruction variant
+    isoBitsM    D4,#8,#8
     RTS
 
 instrTypeFour
@@ -159,11 +160,11 @@ modeJmpTable
     JMP         printAddrPreDec ; #100    ; Address w/ Predec, -(An)
 
 ; NOT NEEDED    
-    JMP         printAddrDisp ; Address w/ Displacement, (d16,An,Xn)
+    JMP         badArg  ; Address w/ Displacement, (d16,An,Xn)
     ; illegal for
     
 ; NOT NEEDED    
-    JMP         printAddrIndex ; Address w/ Index (d8,An,Xn)
+    JMP         badArg ; Address w/ Index (d8,An,Xn)
     ; illegal for 
     
     ; case 111
@@ -180,10 +181,10 @@ modeJmpTable111
     JMP     printAbsLong ; Abs Long
     ; illegal for MULS, DIVU
     
-    JMP     printCounterDisp ; PC w/ Displacement
+    JMP     badArg ; PC w/ Displacement
     ; illegal for MOVE, 
     
-    JMP     printCounterIndex ; PC w/ Index
+    JMP     badArg ; PC w/ Index
     ; illegal for MOVE, 
     
     JMP     printImmediate ; Immediate
@@ -204,23 +205,9 @@ modeJmpTable111
     ; 111
     ; TODO: change to illegalArgs and make said function
     ; JMP     invalidOpcode ; should I instead print out illegal args?
-
-    RTS
-
-
-printRegD
-; TODO
-    PRINTN  #$D,#16
-    PRINTN  D3
-    RTS
-*    PRINTN  
-
-printRegA
-; TODO
-    PRINTN  #$A,#16
-    ; PRINTN is cleaner, so use it for numbers like this if possible
-    PRINTN  D3
-    RTS             
+badArg
+    PRINT   <'[illegal arg]'>
+        
    
 printAddress
 ; TODO
@@ -261,8 +248,8 @@ printAbsShort
 *    PRINT   <'absolute short'>
     PRINT   <'$'>
     
-    BSR readFromFile
-    printReg
+    BSR     readFromFile
+    BSR     printReg
     
     RTS
 
@@ -270,12 +257,12 @@ printAbsLong
 *    PRINT   <'absolute long'>
     PRINT   <'$'>
     
-    BSR readFromFile
+    BSR     readFromFile
     ; Print Address
-    printReg
-    BSR readFromFile
+    BSR     printReg
+    BSR     readFromFile
     ; Print Address
-    printReg
+    BSR     printReg
     
     RTS
 
@@ -296,14 +283,14 @@ printImmediate
     BSR     getOpcodeSize   ; Puts binary for instruction size in D0 (00 for byte, 01 for word, 10 for long)
     BSR     readFromFile    
     ; Print value
-    printReg
+    BSR     printReg
     
     CMP.B   #$2,D0          ; If size bits indicate long, read another word from memory
     BNE     DONE
     
     BSR     readFromFile   
     ; Print value
-    printReg
+    BSR     printReg
     
 DONE    RTS
 
@@ -345,6 +332,7 @@ LOOP_TAIL
 
 ; TODO
 ; should I print as decimal or hex?
+
 
 
 
