@@ -357,12 +357,15 @@ D_LOOP
     BNE     D_TAIL  ; If bit=0, move to next bit in mask
     
     JMP     printRegD   ; Bit=1, print register
+    PRINT   <' '>
     
 D_TAIL
     ADDI.W  #1,D3
     CMPI.W  #8,D3   
     BLT     D_LOOP  ; Gone through bits representing Dn, move to An
-
+    
+    PRINT   <'/'>
+    
     CLR     D3
     LSR.W   #8,D1   ; Shift mask to access address bits
 A_LOOP
@@ -373,6 +376,7 @@ A_LOOP
     BNE     A_TAIL  ; Bit=0, move to next bit
     
     JMP     printRegA
+    PRINT   <' '>
     
 A_TAIL
     ADDI.W  #1,D3   ; Increment loop count
