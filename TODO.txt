@@ -12,3 +12,7 @@ normalize spacing throughout source files
 normalize tabing throughout source files
 
 test program
+
+separate debug mode into its own file
+
+proper spacing on printouts
