@@ -2,11 +2,11 @@
     INCLUDE  "parseInstructionMain.x68" 
     
     
-filename dc.b 'testimage.bin',0
+filename dc.b 'MEGATEST1.bin',0
 
 START
 
-;JMP WELCOME
+    ;JMP WELCOME
 
 SUB_DEBUG
     LEA     filename,A1
@@ -17,7 +17,7 @@ SUB_DEBUG
     RUNTRAP <#53>
     PRINT   <'Disassembler Debug Mode!'>,ENDL
     MOVE.L  #$7000,(startAddress)
-    MOVE.L  #$7374,(endAddress)
+    MOVE.L  #$8000,(endAddress)
     JSR     SUB_printer 
 
 
@@ -199,6 +199,7 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END START
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
