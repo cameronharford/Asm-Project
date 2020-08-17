@@ -71,6 +71,7 @@ instrTypeTable
 ; 9 - JSR
 ; 10 - BRA/BEQ/BGT/BLE
 
+; source arg format is almost universal, exceptions being BRA/BEQ/BGT/BLE, RTS, NOP
 
 instrTypeOne
 
@@ -86,9 +87,7 @@ instrTypeTwo
 instrTypeThree
 ; for ADD, SUB, AND
 ; source mode is standard, dest arg is data reg, dest mode is direction and size
-    
-    ; get direction bit to determine the instruction variant
-    isoBitsM    D4,#8,#8
+
     RTS
 
 instrTypeFour
@@ -160,11 +159,11 @@ modeJmpTable
     JMP         printAddrPreDec ; #100    ; Address w/ Predec, -(An)
 
 ; NOT NEEDED    
-    JMP         badArg  ; Address w/ Displacement, (d16,An,Xn)
+    JMP         printAddrDisp ; Address w/ Displacement, (d16,An,Xn)
     ; illegal for
     
 ; NOT NEEDED    
-    JMP         badArg ; Address w/ Index (d8,An,Xn)
+    JMP         printAddrIndex ; Address w/ Index (d8,An,Xn)
     ; illegal for 
     
     ; case 111
@@ -181,10 +180,10 @@ modeJmpTable111
     JMP     printAbsLong ; Abs Long
     ; illegal for MULS, DIVU
     
-    JMP     badArg ; PC w/ Displacement
+    JMP     printCounterDisp ; PC w/ Displacement
     ; illegal for MOVE, 
     
-    JMP     badArg ; PC w/ Index
+    JMP     printCounterIndex ; PC w/ Index
     ; illegal for MOVE, 
     
     JMP     printImmediate ; Immediate
@@ -205,9 +204,23 @@ modeJmpTable111
     ; 111
     ; TODO: change to illegalArgs and make said function
     ; JMP     invalidOpcode ; should I instead print out illegal args?
-badArg
-    PRINT   <'[illegal arg]'>
-        
+
+    RTS
+
+
+printRegD
+; TODO
+    PRINTN  #$D,#16
+    PRINTN  D3
+    RTS
+*    PRINTN  
+
+printRegA
+; TODO
+    PRINTN  #$A,#16
+    ; PRINTN is cleaner, so use it for numbers like this if possible
+    PRINTN  D3
+    RTS             
    
 printAddress
 ; TODO
@@ -248,8 +261,8 @@ printAbsShort
 *    PRINT   <'absolute short'>
     PRINT   <'$'>
     
-    BSR     readFromFile
-    BSR     printReg
+    BSR readFromFile
+    printReg
     
     RTS
 
@@ -257,12 +270,12 @@ printAbsLong
 *    PRINT   <'absolute long'>
     PRINT   <'$'>
     
-    BSR     readFromFile
+    BSR readFromFile
     ; Print Address
-    BSR     printReg
-    BSR     readFromFile
+    printReg
+    BSR readFromFile
     ; Print Address
-    BSR     printReg
+    printReg
     
     RTS
 
@@ -283,14 +296,14 @@ printImmediate
     BSR     getOpcodeSize   ; Puts binary for instruction size in D0 (00 for byte, 01 for word, 10 for long)
     BSR     readFromFile    
     ; Print value
-    BSR     printReg
+    printReg
     
     CMP.B   #$2,D0          ; If size bits indicate long, read another word from memory
     BNE     DONE
     
     BSR     readFromFile   
     ; Print value
-    BSR     printReg
+    printReg
     
 DONE    RTS
 
@@ -300,7 +313,6 @@ DONE    RTS
 *   D5 - Loop index
 *   D2 - shift loop index
 *   D1 - Char storage
-
 printReg
     MOVE.L  #8,D5
 LOOP
@@ -329,6 +341,45 @@ LOOP_TAIL
     PRINT   <' '>
     RTS
 
+*   Parse the bitmask for a MOVEM instruction, and print the list of registers being moved
+*   D1 - Bitmask
+*   D3 - Loop counter
+*   D2 - Bit storage
+printM
+    BSR readFromFile
+    MOVE.W  D3,D1
+    CLR     D3
+D_LOOP
+    MOVE.W  D1,D2   ; Copy mask
+    LSR.W   D3,D2   ; Shift to the first non-processed bit
+    ANDI.W  #1,D2   ; Isolate bit we care about
+    CMPI.W  #1,D2   ; If bit=1, that register is moved
+    BNE     D_TAIL  ; If bit=0, move to next bit in mask
+    
+    JMP     printRegD   ; Bit=1, print register
+    
+D_TAIL
+    ADDI.W  #1,D3
+    CMPI.W  #8,D3   
+    BLT     D_LOOP  ; Gone through bits representing Dn, move to An
+
+    CLR     D3
+    LSR.W   #8,D1   ; Shift mask to access address bits
+A_LOOP
+    MOVE.W  D1,D2   ; Copy mask
+    LSR.W   D3,D2   ; Shift mask to new bit
+    ANDI.W  #1,D2   ; Isolate first bit
+    CMPI.W  #1,D2   ; If bit=1, register was moved
+    BNE     A_TAIL  ; Bit=0, move to next bit
+    
+    JMP     printRegA
+    
+A_TAIL
+    ADDI.W  #1,D3   ; Increment loop count
+    CMPI.W  #8,D3   ; Check if done
+    BLT     A_LOOP
+    
+    RTS
 
 ; TODO
 ; should I print as decimal or hex?
