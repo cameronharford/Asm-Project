@@ -76,18 +76,32 @@ instrTypeOne
 ; for MOVE
     ; print size first
     BSR         printOpcodeSize
+    
+    ; check source mode
+    ; print source arg (or invalid arg)
+    ; comma
+    
+    ; check dest mode
+    ; print dest arg
     RTS
 
 instrTypeTwo
 ; for MOVEM
-    BSR         printOpcodeSize
+    ; print size first
+    ; size is determined by bit 6
+    ; it's either 0 (W) or 1 (L)
+    
+    ; get direction bit to determine the print order
+    isoBitsM    D4,#10,#10
+    
+    
     RTS
     
 instrTypeThree
 ; for ADD, SUB, AND
-; source mode is standard, dest arg is data reg, dest mode is direction and size
     BSR         printOpcodeSize
-    ; get direction bit to determine the instruction variant
+    
+    ; get direction bit to determine the print order
     BSR         getDirThree
     
     RTS
@@ -102,39 +116,54 @@ getDirThree
     
     RTS
 destToSrc
-    ; print dest arg, then source arg
-    
+    ; print dest arg
+
+    ; check source mode
+    ; print source arg (or invalid arg)    
     RTS
 
 
 instrTypeFour
 ; for LSd/ASd (type 1)
-    BSR         printOpcodeSize
+    ; type 1 doesn't have a size, so no need to print it
+    
     RTS
 
 instrTypeFive
 ; for LSd/ASd (type 2)
     BSR         printOpcodeSize
+    ; type 2 uses an immediate between 1-8
+    ; since it uses only 3 bits for the value, %000 = 8
     RTS
 
 instrTypeSix
 ; for DIVU/MULS
-
+    ;check source mode
+    ;print source arg
+    
+    ;print dest data register
     RTS
 
 instrTypeSeven
 ; for LEA
-
+    ;check source mode
+    ;print source arg
+    
+    ; print dest address register
     RTS
 
 instrTypeEight
 ; for NOT
     BSR         printOpcodeSize
+    ;check source mode
+    
+    ;print source arg
     RTS
 
 instrTypeNine
 ; for JSR
-
+    ; check source mode
+    ; print source arg
     RTS
     
 instrTypeTen
@@ -177,9 +206,9 @@ modeJmpTable
     JMP         printAddrPreDec ; #100    ; Address w/ Predec, -(An)
 
     JMP         badArg  ; Address w/ Displacement, (d16,An,Xn)
-       
+    NOP
     JMP         badArg ; Address w/ Index (d8,An,Xn)
-    
+    NOP
     ; case 111
     MOVE.B      D3,D0
     LEA         modeJmpTable111,A0
@@ -194,9 +223,9 @@ modeJmpTable111
     JMP         printAbsLong ; Abs Long
     
     JMP         badArg ; PC w/ Displacement
-    
+    NOP
     JMP         badArg ; PC w/ Index
-    
+    NOP
     JMP         printImmediate ; Immediate
     ; illegal for MOVE (dest), ADD, SUB, AND, 
     ; for MOVE, you can't use an immediate as a destination
@@ -213,13 +242,13 @@ modeJmpTable111
     NOP
     NOP
     ; 111
-badArg
-    PRINT       <'[illegal arg]'>
-        
-printRegA
-
+    JMP         badArg
+    
 printRegD
-
+    
+printRegA
+    PRINTC      <'A'>
+    
 
 printAddress
 ; TODO
@@ -357,6 +386,7 @@ A_TAIL
     BLT         A_LOOP
     
     RTS
+
 
 
 

@@ -70,12 +70,18 @@ readFromFile
 
 S_MODE_FLAGS            DS.W    1
 D_MODE_FLAGS            DS.W    1
-INSTR_TYPE              DC.B    0
+
+setFlagS        MACRO
+    MOVE.L      \1,(S_M0DE_FLAGS)
+    ENDM
+setFlagD        MACRO
+    MOVE.L      \1,(D_M0DE_FLAGS)
+    ENDM
 **************************************************************
 * FLAG Documentation:                                        *
 * -When we identify an instruction name, such as MOVE, a     *
 * variable is set that indicates what argument modes are     *
-* legal and illegal
+* legal and illegal                                          *
 * -Legal argument modes have their bits set to 1, while      *
 * illegal modes are set to 0                                 *
 * Order goes right-to-left, starting at mode 000 (Data reg). *
@@ -167,21 +173,15 @@ checkMode_2
 ;``` I forget if args should be D3 and D3 rather than D3 and D3 - 1
     isoBitsM    (A3),D3,D3
     CMP         #0,D0
-    BEQ         checkMode_Bad
-    
+    BEQ         badArg
+    RTS
 *    ; if the macro doesn't work:
 *    MOVE.L      #1,D0
 *    MOVE.L      (A3),D2
 *    LSL.L       D3,D0
 *    AND.L       D0,D2
-*    BEQ         checkMode_Bad
-    
-    
-checkMode_Bad
-; loc for illegal modes
-; do stuff
-    PRINT       <'Illegal arg'>
-    RTS
+*    BEQ         badArg
+
 
 ************************************************************
 **         instruction reference pointers/offsets         **
@@ -235,6 +235,13 @@ invalidOpcode
 	RTS
 ; <instr_name>.<instr_size>(tab)(tab)<arg2(source)>,<arg1(dest)>
 
+badArg
+    PRINT       <'[illegal arg]'>
+    RTS
+    
+    
+
+
 ; TODO: documentation
 RUNTRAP     MACRO
     IFNE NARG-1                       ;if not 1 arguments
@@ -263,6 +270,7 @@ IMMCMP      MACRO
             \3  \4
         ENDC
         ENDM
+
 
 
 

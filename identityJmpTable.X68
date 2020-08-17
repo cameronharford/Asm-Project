@@ -117,7 +117,8 @@ code0100
 
 ; Instruction-specific subroutines
 sub_not
-
+    PRINT       <'NOT'>,ENDL
+    setFlagS    #$19D
 	MOVEQ       #8,D5
     RTS
 sub_nop
@@ -270,13 +271,13 @@ code1100
 	
 sub_and
     PRINT       <'AND'>
-	MOVEQ   #3,D5
+	MOVEQ       #3,D5
 *	MOVE.W  ,(S_MODE_FLAGS)
     RTS
 
 sub_muls
     PRINT       <'MULS'>
-	MOVEQ   #6,D5
+	MOVEQ       #6,D5
     RTS
 
 ************************************************************
@@ -328,13 +329,11 @@ shiftIdentify
     BNE         typeTwo
 typeOne
     ; for type one, we need to check bits 10-9
-
     isoBitsM    D4,#10,#9
 	MOVEQ       #4,D5
     BRA         calcJmpOffset
 typeTwo
     ; type two checks bits 4-3
-
     isoBitsM    D4,#4,#3
 	MOVEQ       #5,D5
     BRA         calcJmpOffset
@@ -374,6 +373,7 @@ checkDirection
     ; if result is 0, it's right
     RTS
     
+
 
 
 
