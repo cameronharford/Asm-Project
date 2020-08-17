@@ -1,23 +1,31 @@
     ORG $1000
     INCLUDE  "parseInstructionMain.x68" 
     
-    
-filename dc.b 'MEGATEST1.bin',0
+;Death mode    
+;TEST_MEGA.bin $7000 - $75E8
+
+;Kelly's test
+;TEST_TEST.bin $7000 - $7373
+filename   dc.b 'TEST_MEGA.bin',0
+debugStart EQU  $7000
+debugEnd   EQU  $75E8
+
 
 START
-
+    
+    ;control debug mode by uncommenting this
     ;JMP WELCOME
 
 SUB_DEBUG
     LEA     filename,A1
     RUNTRAP <#13>
     RUNTRAP <#51>
-    MOVE.L  #$7000,A1
-    MOVE.L  #$1000,D2
+    MOVE.L  #debugStart,A1
+    MOVE.L  #debugEnd,D2
     RUNTRAP <#53>
     PRINT   <'Disassembler Debug Mode!'>,ENDL
     MOVE.L  #$7000,(startAddress)
-    MOVE.L  #$8000,(endAddress)
+    MOVE.L  #$75E8,(endAddress)
     JSR     SUB_printer 
 
 
@@ -154,9 +162,14 @@ P_CONTINUE
     BGT     P_DONE                  ;jump to the ask-to-read-another-file printout and termination
 ;printing an instruction and updating our instruction pointer
     BSR     SUB_printRegister       ;print the value of A6 out to console 
-    
-    ;
-    ;
+   
+
+
+
+ 
+; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
+; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
+; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
     MOVE.L  (A6),D1
     LSR.L   #8,D1
     LSR.L   #8,D1
@@ -180,10 +193,14 @@ freeHongKong
     ; KILL ME
     
     ADD.L   #2,A6
-    ; KILL ME
-    ;
-    ;
-    ;
+; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
+; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
+; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
+
+
+
+
+
     
 ;reading how full our screen is
     ADD.L   #1,A5                   ;update how many lines we have printed to the screen
@@ -199,6 +216,7 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END START
+
 
 *~Font name~Courier New~
 *~Font size~10~
