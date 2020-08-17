@@ -3,50 +3,50 @@
 ; might want to include branch displacement calc function here if I don't use it in instr identification
 parseInstructionMain: 
     ; save SP so if opcode is invalid, we can return immediately
-    MOVEA   SP,A2
+    MOVEA       SP,A2
     
-    BSR     findOpcodeMain
-*    ; I think this should parse the instructions by common patterns/formats
-*    ; For ex, many opcodes use bits 0-2 for their source arg, and bits 3-5 for the arg mode/type
-*    ; We could use a common method to parse this section
-*    ; Basically, findOpcodeMain deals with identifying the name. It sets a string or flag somewhere for us
-*    ; Based on this flag, we know the instruction's format
-*    LEA     instrTypeTable,A0
-*    ; D5 currently contains the index for the jump table
-*    MOVE.B  D5,D0
-*    BSR     calcJmpOffset
+    BSR         findOpcodeMain
+    ; I think this should parse the instructions by common patterns/formats
+    ; For ex, many opcodes use bits 0-2 for their source arg, and bits 3-5 for the arg mode/type
+    ; We could use a common method to parse this section
+    ; Basically, findOpcodeMain deals with identifying the name. It sets a string or flag somewhere for us
+    ; Based on this flag, we know the instruction's format
+    LEA         instrTypeTable,A0
+    ; D5 currently contains the index for the jump table
+    MOVE.B      D5,D0
+    BSR         calcJmpOffset
     
     ; print instr size
     
     ; print source arg
-    BSR     getSrcReg
-    BSR     getSrcMode
+    BSR         getSrcReg
+    BSR         getSrcMode
     
     ; comma separating args
-    PRINT   <','>
+    PRINTC      <','>
     
     ; print dest arg
-    BSR     getDestReg
-    BSR     getDestMode
+    BSR         getDestReg
+    BSR         getDestMode
     
     ; endl
-    PRINT   <''>,ENDL
+    PRINT       <''>,ENDL
     
 	RTS
 
 
 
 instrTypeTable
-    JMP     instrTypeOne
-    JMP     instrTypeTwo
-    JMP     instrTypeThree
-    JMP     instrTypeFour
-    JMP     instrTypeFive
-    JMP     instrTypeSix
-    JMP     instrTypeSeven
-    JMP     instrTypeEight
-    JMP     instrTypeNine
-    JMP     instrTypeTen
+    JMP         instrTypeOne
+    JMP         instrTypeTwo
+    JMP         instrTypeThree
+    JMP         instrTypeFour
+    JMP         instrTypeFive
+    JMP         instrTypeSix
+    JMP         instrTypeSeven
+    JMP         instrTypeEight
+    JMP         instrTypeNine
+    JMP         instrTypeTen
     
 
 ; instruction arg archetypes:
@@ -71,46 +71,74 @@ instrTypeTable
 ; 9 - JSR
 ; 10 - BRA/BEQ/BGT/BLE
 
-; source arg format is almost universal, exceptions being BRA/BEQ/BGT/BLE, RTS, NOP
 
 instrTypeOne
-
+; for MOVE
     ; print size first
-
+    BSR         printOpcodeSize
     RTS
 
 instrTypeTwo
-; for 
-
+; for MOVEM
+    BSR         printOpcodeSize
     RTS
     
 instrTypeThree
 ; for ADD, SUB, AND
 ; source mode is standard, dest arg is data reg, dest mode is direction and size
-
+    BSR         printOpcodeSize
+    ; get direction bit to determine the instruction variant
+    BSR         getDirThree
+    
     RTS
+    
+getDirThree
+    BSR         checkDirection
+    CMP         #0,D0
+    BEQ         destToSrc
+    ; print source then dest args
+    
+    RTS
+destToSrc
+    ; print dest arg, then source arg
+    
+    RTS
+    
+checkDirThree
+    MOVE        D4,D0
+    ANDI.L      #256,D0
+    ; if result isn't 0, we'll print dest before source
+    ; otherwise, print as normal
+    RTS
+    
 
 instrTypeFour
-
+; for LSd/ASd (type 1)
+    BSR         printOpcodeSize
     RTS
 
 instrTypeFive
-
+; for LSd/ASd (type 2)
+    BSR         printOpcodeSize
     RTS
 
 instrTypeSix
+; for DIVU/MULS
 
     RTS
 
 instrTypeSeven
+; for LEA
 
     RTS
 
 instrTypeEight
-
+; for NOT
+    BSR         printOpcodeSize
     RTS
 
 instrTypeNine
+; for JSR
 
     RTS
     
@@ -124,13 +152,11 @@ getSrcMode
     isoBitsM    D4,#5,#3
     LEA         modeJmpTable,A0
     BRA         calcJmpOffset
-    RTS ; TODO: remove if this sub uses JMP, keep for JSR
     
 getDestMode
     isoBitsM    D4,#8,#6
     LEA         modeJmpTable,A0
     BRA         calcJmpOffset
-    RTS ; TODO: remove if this sub uses JMP, keep for JSR
     
 getSrcReg
     ; typically used for printing, but also used for a jmp table index
@@ -145,7 +171,6 @@ getDestReg
     
 modeJmpTable
     ; jump table for argument mode
-    ; NOP's are for padding so I can reuse calcJmpOffset
     JMP         printRegD ; #000    ; Data Reg, D0-D7
     
     JMP         printRegA ; #001    ; Addr Reg, A0-A7
@@ -159,34 +184,32 @@ modeJmpTable
     JMP         printAddrPreDec ; #100    ; Address w/ Predec, -(An)
 
 ; NOT NEEDED    
-    JMP         printAddrDisp ; Address w/ Displacement, (d16,An,Xn)
-    ; illegal for
+    JMP         badArg  ; Address w/ Displacement, (d16,An,Xn)
     
 ; NOT NEEDED    
-    JMP         printAddrIndex ; Address w/ Index (d8,An,Xn)
-    ; illegal for 
+    JMP         badArg ; Address w/ Index (d8,An,Xn)
     
     ; case 111
-    MOVE.B  D3,D0
-    LEA     modeJmpTable111,A0
-    JMP     calcJmpOffset
+    MOVE.B      D3,D0
+    LEA         modeJmpTable111,A0
+    JMP         calcJmpOffset
         
     
 modeJmpTable111
 ; do all of these modes require an extension?
 ; these cases do: 0,1,100
-    JMP     printAbsShort ; Abs Short
+    JMP         printAbsShort ; Abs Short
     
-    JMP     printAbsLong ; Abs Long
+    JMP         printAbsLong ; Abs Long
     ; illegal for MULS, DIVU
     
-    JMP     printCounterDisp ; PC w/ Displacement
+    JMP         badArg ; PC w/ Displacement
     ; illegal for MOVE, 
     
-    JMP     printCounterIndex ; PC w/ Index
+    JMP         badArg ; PC w/ Index
     ; illegal for MOVE, 
     
-    JMP     printImmediate ; Immediate
+    JMP         printImmediate ; Immediate
     ; illegal for MOVE (dest), ADD, SUB, AND, 
     ; for MOVE, you can't use an immediate as a destination
     ; for ADD/SUB/AND, they have variants which handle immediates (ADDI/SUBI/ANDI)
@@ -202,110 +225,70 @@ modeJmpTable111
     NOP
     NOP
     ; 111
-    ; TODO: change to illegalArgs and make said function
-    ; JMP     invalidOpcode ; should I instead print out illegal args?
-
-    RTS
-
-
-printRegD
-; TODO
-    PRINTN  #$D,#16
-    PRINTN  D3
-    RTS
-*    PRINTN  
-
-printRegA
-; TODO
-    PRINTN  #$A,#16
-    ; PRINTN is cleaner, so use it for numbers like this if possible
-    PRINTN  D3
-    RTS             
+badArg
+    PRINT       <'[illegal arg]'>
+        
    
 printAddress
 ; TODO
 *    PRINT   <'addr'>
 
-    PRINT   <'('>
-    BSR     printRegA
-    PRINT   <')'>
+    PRINTC      <'('>
+    BSR         printRegA
+    PRINTC      <')'>
     RTS
    
 printAddrPostInc
 ; TODO
 *    PRINT   <'addr w/ postinc'>
 
-    BSR     printAddress
-    PRINT   <'+'>
+    BSR         printAddress
+    PRINTC      <'+'>
     RTS
 
 printAddrPreDec
 ; TODO
 *    PRINT   <'addr w/ predec'>
 
-    PRINT   <'-'>
-    BSR     printAddress  
-    RTS  
-
-; NOT NEEDED
-printAddrDisp
-*    PRINT   <'addr w/ displacement'>
-    RTS
-
-; NOT NEEDED
-printAddrIndex
-*    PRINT   <'addr w/ index'>
+    PRINTC      <'-'>
+    BSR         printAddress  
     RTS
 
 printAbsShort
 *    PRINT   <'absolute short'>
-    PRINT   <'$'>
+    PRINTC      <'$'>
     
-    BSR readFromFile
-    printReg
+    BSR         readFromFile
+    BRA         printReg
     
-    RTS
-
 printAbsLong
 *    PRINT   <'absolute long'>
-    PRINT   <'$'>
+    PRINTC      <'$'>
     
-    BSR readFromFile
+    BSR         readFromFile
     ; Print Address
-    printReg
-    BSR readFromFile
+    BSR         printReg
+    BSR         readFromFile
     ; Print Address
-    printReg
+    BRA         printReg ;```
     
-    RTS
-
-; NOT NEEDED
-printCounterDisp
-*    PRINT   <'counter w/ displacement'>
-    RTS
-
-; NOT NEEDED
-printCounterIndex
-*    PRINT   <'counter w/ index'>
-    RTS
- 
 printImmediate
 *    PRINT   <'immediate'>
-    PRINT   <'#'>
+    PRINTC      <'#'>
     
-    BSR     getOpcodeSize   ; Puts binary for instruction size in D0 (00 for byte, 01 for word, 10 for long)
-    BSR     readFromFile    
+    BSR         getOpcodeSize   ; Puts binary for instruction size in D0 (00 for byte, 01 for word, 10 for long)
+    BSR         readFromFile    
     ; Print value
-    printReg
+    BSR         printReg
     
-    CMP.B   #$2,D0          ; If size bits indicate long, read another word from memory
-    BNE     DONE
+    CMP.B       #$2,D0          ; If size bits indicate long, read another word from memory
+    BNE         DONE
     
-    BSR     readFromFile   
+    BSR         readFromFile   
     ; Print value
-    printReg
-    
-DONE    RTS
+    BSR         printReg    
+DONE
+    RTS
 
 *   Prints the contents of a register in hex (Slightly modified from function in IO)
 *   For comments on what each line does, see IO's function
@@ -313,82 +296,79 @@ DONE    RTS
 *   D5 - Loop index
 *   D2 - shift loop index
 *   D1 - Char storage
+
 printReg
-    MOVE.L  #8,D5
+    MOVE.L      #8,D5
 LOOP
-    MOVE.L  D3,D1
-    CLR     D2
+    MOVE.L      D3,D1
+    CLR         D2
 SHIFTLOOP
-    ADD.L   #1,D2
-    CMP.B   D5,D2
-    BEQ     NUM
-    LSR.L   #4,D1
-    JMP     SHIFTLOOP
+    ADD.L       #1,D2
+    CMP.B       D5,D2
+    BEQ         NUM
+    LSR.L       #4,D1
+    JMP         SHIFTLOOP
 NUM
-    AND.L   #$F,D1
-    CMP.B   #9,D1
-    BGT     LETTER
-    ADD.B   #'0',D1
-    RUNTRAP <#6>
-    JMP     LOOP_TAIL
+    AND.L       #$F,D1
+    CMP.B       #9,D1
+    BGT         LETTER
+    ADD.B       #'0',D1
+    RUNTRAP     <#6>
+    JMP         LOOP_TAIL
 LETTER
-    ADD.B   #55,D1
-    RUNTRAP <#6>
+    ADD.B       #55,D1
+    RUNTRAP     <#6>
 LOOP_TAIL
-    SUB.B   #1,D5
-    CMP.B   #0,D5
-    BNE     LOOP
-    PRINT   <' '>
+    SUB.B       #1,D5
+    CMP.B       #0,D5
+    BNE         LOOP
+    PRINTC      <' '>
     RTS
+
 
 *   Parse the bitmask for a MOVEM instruction, and print the list of registers being moved
 *   D1 - Bitmask
 *   D3 - Loop counter
 *   D2 - Bit storage
 printM
-    BSR readFromFile
-    MOVE.W  D3,D1
-    CLR     D3
+    BSR         readFromFile
+    MOVE.W      D3,D1
+    CLR         D3
 D_LOOP
-    MOVE.W  D1,D2   ; Copy mask
-    LSR.W   D3,D2   ; Shift to the first non-processed bit
-    ANDI.W  #1,D2   ; Isolate bit we care about
-    CMPI.W  #1,D2   ; If bit=1, that register is moved
-    BNE     D_TAIL  ; If bit=0, move to next bit in mask
+    MOVE.W      D1,D2   ; Copy mask
+    LSR.W       D3,D2   ; Shift to the first non-processed bit
+    ANDI.W      #1,D2   ; Isolate bit we care about
+    CMPI.W      #1,D2   ; If bit=1, that register is moved
+    BNE         D_TAIL  ; If bit=0, move to next bit in mask
     
-    JMP     printRegD   ; Bit=1, print register
-    PRINT   <' '>
+    JMP         printRegD   ; Bit=1, print register
+    PRINTC      <' '>
     
 D_TAIL
-    ADDI.W  #1,D3
-    CMPI.W  #8,D3   
-    BLT     D_LOOP  ; Gone through bits representing Dn, move to An
+    ADDI.W      #1,D3
+    CMPI.W      #8,D3   
+    BLT         D_LOOP  ; Gone through bits representing Dn, move to An
     
-    PRINT   <'/'>
+    PRINTC      <'/'>
     
-    CLR     D3
-    LSR.W   #8,D1   ; Shift mask to access address bits
+    CLR         D3
+    LSR.W       #8,D1   ; Shift mask to access address bits
 A_LOOP
-    MOVE.W  D1,D2   ; Copy mask
-    LSR.W   D3,D2   ; Shift mask to new bit
-    ANDI.W  #1,D2   ; Isolate first bit
-    CMPI.W  #1,D2   ; If bit=1, register was moved
-    BNE     A_TAIL  ; Bit=0, move to next bit
+    MOVE.W      D1,D2   ; Copy mask
+    LSR.W       D3,D2   ; Shift mask to new bit
+    ANDI.W      #1,D2   ; Isolate first bit
+    CMPI.W      #1,D2   ; If bit=1, register was moved
+    BNE         A_TAIL  ; Bit=0, move to next bit
     
-    JMP     printRegA
-    PRINT   <' '>
+    JMP         printRegA
+    PRINTC      <' '>
     
 A_TAIL
-    ADDI.W  #1,D3   ; Increment loop count
-    CMPI.W  #8,D3   ; Check if done
-    BLT     A_LOOP
+    ADDI.W      #1,D3   ; Increment loop count
+    CMPI.W      #8,D3   ; Check if done
+    BLT         A_LOOP
     
     RTS
-
-; TODO
-; should I print as decimal or hex?
-
-
 
 
 
