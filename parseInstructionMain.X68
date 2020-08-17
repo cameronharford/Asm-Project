@@ -16,18 +16,19 @@ parseInstructionMain:
     MOVE.B      D5,D0
     BSR         calcJmpOffset
     
-    ; print instr size
-    
-    ; print source arg
-    BSR         getSrcReg
-    BSR         getSrcMode
-    
-    ; comma separating args
-    PRINTC      <','>
-    
-    ; print dest arg
-    BSR         getDestReg
-    BSR         getDestMode
+    ; TODO: move this logic to each of the instruction type subs
+*    ; print instr size
+*    
+*    ; print source arg
+*    BSR         getSrcReg
+*    BSR         getSrcMode
+*    
+*    ; comma separating args
+*    PRINTC      <','>
+*    
+*    ; print dest arg
+*    BSR         getDestReg
+*    BSR         getDestMode
     
     ; endl
     PRINT       <''>,ENDL
@@ -99,23 +100,27 @@ instrTypeTwo
     
 instrTypeThree
 ; for ADD, SUB, AND
+    ; get direction bit
+    isoBitsM    D4,#10,#10
+    MOVE        D0,D1
+    
+    ; adjust mode restrictions to account for direction
+    ; if dir is 1, src mode can't be Dn
+    EOR.W       D0,(S_MODE_FLAGS)
+    
     BSR         printOpcodeSize
     
-    ; get direction bit to determine the print order
-    BSR         getDirThree
-    
-    RTS
-    
-getDirThree
-    MOVE        D4,D0
-    ANDI.L      #256,D0
+    ; check direction bit to determine the print order
+    CMP.B       #0,D1 
     ; if result isn't 0, we'll print dest before source
     ; otherwise, print as normal
     BEQ         destToSrc
-    ; print source then dest args
+    
+    ; TODO: print source then dest args
     
     RTS
 destToSrc
+    ; TODO:
     ; print dest arg
 
     ; check source mode
@@ -134,6 +139,9 @@ instrTypeFive
     BSR         printOpcodeSize
     ; type 2 uses an immediate between 1-8
     ; since it uses only 3 bits for the value, %000 = 8
+    
+    ; type 2 doesn't have a mode for src or dest, so we don't check
+    ; TODO: print dest, then src arg (Dn)
     RTS
 
 instrTypeSix
@@ -386,6 +394,7 @@ A_TAIL
     BLT         A_LOOP
     
     RTS
+
 
 
 

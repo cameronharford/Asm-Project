@@ -8,6 +8,8 @@
 * printing out address of instruction + 2 by accident
 *   -this would be caused by readFromFile incrementing by 2
 *    and the printer not accounting for this
+* random function calls
+*   -caused by mistakes in a jump table structure
 
 * Register usage key:
 *   D0 = randomly used; can be freely modified
@@ -18,7 +20,7 @@
 *   D5 = 
 *   D6 = 
 *   D7 = 
-*   A0 =  
+*   A0 = 
 *   A1 = randomly used, typically holds a jump table address;
 *        can be freely modified
 *   A2 = holds a SP address used to return to IO directly;
@@ -270,6 +272,7 @@ IMMCMP      MACRO
             \3  \4
         ENDC
         ENDM
+
 
 
 
