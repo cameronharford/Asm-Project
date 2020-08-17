@@ -7,23 +7,33 @@ firstJmpTable
     JMP         invalidOpcode       ; 0000 are all invalid
     NOP
     JMP         moveByte
+    
     JMP         moveLong
+    
     JMP         moveWord
+    
     JMP         code0100            ; NOT,NOP,RTS,JSR,MOVEM,LEA
+    
     JMP         invalidOpcode       ; 0101 are all invalid
     NOP
     JMP         branchIdentify      ; BRA,BEQ,BGT,BLE. rest are invalid
+    
     JMP         invalidOpcode       ; MOVEQ is invalid
     NOP
     JMP         code1000            ; DIVU, rest are invalid
+    
     JMP         subIdentify         ; SUB, rest are invalid
+    
     JMP         invalidOpcode       ; no opcodes have 1010
     NOP
     JMP         invalidOpcode       ; 1011 are all invalid
     NOP
     JMP         code1100            ; MULS,AND good. rest are invalid
+    
     JMP         addIdentify         ; ADD, rest are invalid
+    
     JMP         shiftIdentify       ; ASd and LSd, rest are invalid
+    
     JMP         invalidOpcode       ; 1111 are all invalid
 
 
@@ -111,23 +121,23 @@ sub_not
 	MOVEQ       #8,D5
     RTS
 sub_nop
-	PRINT       <'nop '>,ENDL
+	PRINT       <'NOP'>,ENDL
 	MOVEA       A2,SP
 	RTS
 sub_rts
-
+    PRINT       <'RTS'>,ENDL
 	MOVEA       A2,SP
 	RTS
 sub_jsr
-
+    PRINT       <'JSR'>,ENDL
 	MOVEQ       #9,D5
     RTS    
 sub_movem
-
+    PRINT       <'MOVEM'>
 	MOVEQ       #2,D5
     RTS
 sub_lea
-
+    PRINT       <'LEA'>
 	MOVEQ       #7,D5
     RTS
 
@@ -145,10 +155,11 @@ branchIdentify
 	; BSR so we can return here to calc displacement
 	BSR			calcJmpOffset
 	
+	; set the instruction type
 	MOVEQ       #10,D5
 	; TODO: displacement shit. Might need to generate a label (which would be aids)
 	; complete this code later
-    STOP        #$2700
+    RTS
 
 ; 0110
 branchJmpTable
@@ -165,8 +176,7 @@ branchJmpTable
 	JMP			invalidOpcode       * BCS not required
 	NOP
 	JMP			invalidOpcode       * BNE not required
-	NOP
-	
+	NOP	
 	JMP			sub_beq
 	
 	JMP			invalidOpcode       * BVC not required
@@ -180,22 +190,22 @@ branchJmpTable
 	JMP			invalidOpcode       * BGE not required
 	NOP
 	JMP			invalidOpcode       * BLT not required
-	NOP
-	
+	NOP	
 	JMP			sub_bgt
+	
 	JMP			sub_ble
 
 sub_bra
-
+    PRINT       <'BRA'>
     RTS
 sub_beq
-
+    PRINT       <'BEQ'>
     RTS
 sub_bgt
-
+    PRINT       <'BGT'>
     RTS
 sub_ble
-
+    PRINT       <'BLE'>
     RTS
 
 ************************************************************
@@ -209,8 +219,7 @@ code1000
 	CMP.W       #%011,D0
 	BNE         invalidOpcode
 	; we know the input is DIVU, so do something now....
-	
-
+    PRINT       <'DIVU'>
 	MOVEQ       #6,D5
     RTS
 
@@ -228,8 +237,7 @@ subIdentify
     BSR         addSubHelper
     
 	; do stuff
-	
-
+    PRINT       <'SUB'>
     RTS
     
     
@@ -252,19 +260,22 @@ code1100
 	isoBitsM    D4,#8,#6
 	CMP.B       #%011,D0
 	BEQ         invalidOpcode
-	CMP.B       #%111,D0
-	BEQ         sub_muls
+;```
+    BGT         sub_muls
+*	CMP.B       #%111,D0
+*	BEQ         sub_muls
 	; ANDI has different 15-12 bits than AND
 	; AND has every bit after 12 non-constant
 	; so AND will be determined by ruling out other opcodes
 	
 sub_and
-
+    PRINT       <'AND'>
 	MOVEQ   #3,D5
+	MOVE.W  ,(S_MODE_FLAGS)
     RTS
 
 sub_muls
-
+    PRINT       <'MULS'>
 	MOVEQ   #6,D5
     RTS
 
@@ -276,8 +287,7 @@ addIdentify
     BSR         addSubHelper
     
     ; do stuff with ADD
-    
-
+    PRINT       <'ADD'>
     RTS
 
 
@@ -299,6 +309,10 @@ addSubHelper
     BEQ         invalidOpcode
     ; if we got here, the opcode is a valid sub/add
 	MOVEQ       #3,D5
+	; set instruction type
+	isoBitsM    D4,#8,#8
+	ADD.B       D0,D5
+	
     RTS
 
 ************************************************************
@@ -328,19 +342,39 @@ typeTwo
 shiftJmpTable
     ; TODO: add subroutines for ASd and LSd
     JMP			sub_asd ; for ASR/ASL
+    
     JMP			sub_lsd ; for LSR/LSL
+    
 	JMP			invalidOpcode       * ROXd * not required
 	NOP
 	JMP			invalidOpcode		* ROd * not required
 	
 sub_asd
-
-    RTS
+    PRINT       <'AS'>
+    BRA         printShiftDirection
+    
 sub_lsd
+    PRINT       <'LS'>
+    BRA         printShiftDirection
 
+    
+printShiftDirection
+    BSR         checkDirection
+    CMP         #0,D0
+    BEQ         shiftR
+    PRINTC      <'L'>
+    RTS
+shiftR
+    PRINTC      <'R'>
     RTS
     
+checkDirection
+    MOVE        D4,D0
+    ANDI.L      #256,D0
+    ; if result is 0, it's right
+    RTS
     
+
 
 
 

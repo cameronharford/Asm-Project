@@ -194,20 +194,39 @@ getOpcodeSize
     ;                   01 - .W
     ;                   10 - .L
     ;                   11 - special case
-    isoBitsM        D4,#7,#6
+    isoBitsM    D4,#7,#6
     RTS
 
+printOpcodeSize
+    PRINTC      <'.'>
+    BSR         getOpcodeSize
+    CMP.B       #%10,D0
+    BGT         invalidSize
+    BEQ         printSizeLong
+    CMP.B       #%01,D0
+    BEQ         printSizeWord
+    PRINTC      <'B'>
+    RTS
+printSizeWord
+    PRINTC      <'W'>
+    RTS
+printSizeLong
+    PRINTC      <'L'>
+    RTS
+invalidSize
+    PRINTC      <'?'>
+    RTS
 
 ************************************************************
 **              error print-outs for program              **
 ************************************************************ 
 invalidOpcode	
-	PRINT           <'Error: Invalid opcode! '>
-	PRINT           <'(this instruction is not supported)'>,ENDL
+	PRINT       <'Error: Invalid opcode! '>
+	PRINT       <'(this instruction is not supported)'>,ENDL
 
     ; to avoid memory leaks with the stack, I need to reset
 	; its ptr to what it was when findOpcodeMain was called
-	MOVEA   A2,SP
+	MOVEA       A2,SP
 	; the reason I need this is because if the opcode is
 	; invalid, there's no need to read the instruction args
 	; this also allows me to use RTS, since SP now points at 
@@ -218,16 +237,21 @@ invalidOpcode
 
 ; TODO: documentation
 RUNTRAP     MACRO
-        IFNE NARG-1                       ;if not 1 arguments
-            IFNE NARG-2
-                FAIL ERROR, RUNTRAP requires 1-2 arguments
-                MEXIT
-            ENDC
-            MOVE.L  \2,D1
+    IFNE NARG-1                       ;if not 1 arguments
+        IFNE NARG-2
+            FAIL ERROR, RUNTRAP requires 1-2 arguments
+            MEXIT
         ENDC
-        MOVE.B  \1,D0
-        TRAP    #15
-        ENDM    
+        MOVE.L  \2,D1
+    ENDC
+    MOVE.B  \1,D0
+    TRAP    #15
+    ENDM    
+
+; TODO: move to print.x68
+PRINTC      MACRO
+    RUNTRAP     #6,#\1
+    ENDM
 
 ; TODO: documentation
 ; compares an immediate (arg 1) against data pointed to by an address (arg 2)
@@ -244,6 +268,7 @@ IMMCMP      MACRO
             \3  \4
         ENDC
         ENDM
+
 
 
 
