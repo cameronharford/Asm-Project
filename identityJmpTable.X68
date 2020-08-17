@@ -271,7 +271,7 @@ code1100
 sub_and
     PRINT       <'AND'>
 	MOVEQ   #3,D5
-	MOVE.W  ,(S_MODE_FLAGS)
+*	MOVE.W  ,(S_MODE_FLAGS)
     RTS
 
 sub_muls
@@ -374,6 +374,7 @@ checkDirection
     ; if result is 0, it's right
     RTS
     
+
 
 
 

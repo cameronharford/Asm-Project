@@ -6,3 +6,9 @@ https://canvas.uw.edu/courses/1409533/pages/specification
 check this page for any restrictions I missed
 
 make sure to remove these in the final submission
+
+normalize spacing throughout source files
+
+normalize tabing throughout source files
+
+test program

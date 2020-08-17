@@ -246,11 +246,6 @@ RUNTRAP     MACRO
     ENDC
     MOVE.B  \1,D0
     TRAP    #15
-    ENDM    
-
-; TODO: move to print.x68
-PRINTC      MACRO
-    RUNTRAP     #6,#\1
     ENDM
 
 ; TODO: documentation
@@ -268,6 +263,7 @@ IMMCMP      MACRO
             \3  \4
         ENDC
         ENDM
+
 
 
 

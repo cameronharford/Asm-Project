@@ -93,8 +93,10 @@ instrTypeThree
     RTS
     
 getDirThree
-    BSR         checkDirection
-    CMP         #0,D0
+    MOVE        D4,D0
+    ANDI.L      #256,D0
+    ; if result isn't 0, we'll print dest before source
+    ; otherwise, print as normal
     BEQ         destToSrc
     ; print source then dest args
     
@@ -103,14 +105,7 @@ destToSrc
     ; print dest arg, then source arg
     
     RTS
-    
-checkDirThree
-    MOVE        D4,D0
-    ANDI.L      #256,D0
-    ; if result isn't 0, we'll print dest before source
-    ; otherwise, print as normal
-    RTS
-    
+
 
 instrTypeFour
 ; for LSd/ASd (type 1)
@@ -174,19 +169,15 @@ modeJmpTable
     JMP         printRegD ; #000    ; Data Reg, D0-D7
     
     JMP         printRegA ; #001    ; Addr Reg, A0-A7
-    ; illegal for MOVE, MOVEM, ADD, SUB, AND, NOT, LSd, ASd, JSR
     
     JMP         printAddress ; #010    ; Address, (A0)-(A7)
     
     JMP         printAddrPostInc ; #011    ; Address w/ Postinc, (An)+
-    ; illegal for 
-    
+
     JMP         printAddrPreDec ; #100    ; Address w/ Predec, -(An)
 
-; NOT NEEDED    
     JMP         badArg  ; Address w/ Displacement, (d16,An,Xn)
-    
-; NOT NEEDED    
+       
     JMP         badArg ; Address w/ Index (d8,An,Xn)
     
     ; case 111
@@ -201,13 +192,10 @@ modeJmpTable111
     JMP         printAbsShort ; Abs Short
     
     JMP         printAbsLong ; Abs Long
-    ; illegal for MULS, DIVU
     
     JMP         badArg ; PC w/ Displacement
-    ; illegal for MOVE, 
     
     JMP         badArg ; PC w/ Index
-    ; illegal for MOVE, 
     
     JMP         printImmediate ; Immediate
     ; illegal for MOVE (dest), ADD, SUB, AND, 
@@ -228,11 +216,14 @@ modeJmpTable111
 badArg
     PRINT       <'[illegal arg]'>
         
-   
+printRegA
+
+printRegD
+
+
 printAddress
 ; TODO
 *    PRINT   <'addr'>
-
     PRINTC      <'('>
     BSR         printRegA
     PRINTC      <')'>
@@ -241,7 +232,6 @@ printAddress
 printAddrPostInc
 ; TODO
 *    PRINT   <'addr w/ postinc'>
-
     BSR         printAddress
     PRINTC      <'+'>
     RTS
@@ -249,7 +239,6 @@ printAddrPostInc
 printAddrPreDec
 ; TODO
 *    PRINT   <'addr w/ predec'>
-
     PRINTC      <'-'>
     BSR         printAddress  
     RTS
@@ -257,7 +246,6 @@ printAddrPreDec
 printAbsShort
 *    PRINT   <'absolute short'>
     PRINTC      <'$'>
-    
     BSR         readFromFile
     BRA         printReg
     
@@ -314,11 +302,11 @@ NUM
     BGT         LETTER
     ADD.B       #'0',D1
     RUNTRAP     <#6>
-    JMP         LOOP_TAIL
+    JMP         REG_TAIL
 LETTER
     ADD.B       #55,D1
     RUNTRAP     <#6>
-LOOP_TAIL
+REG_TAIL
     SUB.B       #1,D5
     CMP.B       #0,D5
     BNE         LOOP
@@ -369,6 +357,10 @@ A_TAIL
     BLT         A_LOOP
     
     RTS
+
+
+
+
 
 
 

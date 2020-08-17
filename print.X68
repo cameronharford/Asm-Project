@@ -50,16 +50,11 @@ PRINTN    MACRO
     MOVEM.L (SP)+,D0-D1
     ENDM
 
-
-
-
-
-
-
-
-
-
-
+PRINTC      MACRO
+    MOVE.B  #\1,D1
+    MOVE.B  #6,D1
+    TRAP    #15
+    ENDM
 
 *~Font name~Courier New~
 *~Font size~10~
