@@ -112,6 +112,7 @@ instrTypeTwo_2
     AND.L       #256,D1 
     BEQ         regMem  
     ; Direction 1 -> memory to register
+    setFlagS    #$18C
     BSR         getSrcReg
     BSR         getSrcMode
     PRINTC      <','>
@@ -119,6 +120,7 @@ instrTypeTwo_2
     
 regMem
     ; Direction 0 -> register to memory
+    setFlagS    #$194
     BSR         printM  ; Print list of registers
     PRINTC      <','>
     BSR         getSrcReg
@@ -131,7 +133,6 @@ instrTypeThree
     AND.L       #256,D1
     BNE         dnToEa
     OR.W       #$19D,(sModeFlag)
-*    setFlagS    #$19D
     BRA         eaToDn
     ; adjust mode restrictions to account for direction
     ; if dir is 1, src mode can't be Dn
@@ -176,6 +177,7 @@ instrTypeFour
 ; for LSd/ASd (type 1, single arg)
     PRINTT
     ; type 1 doesn't have a size, so no need to print it
+    setFlagS    #$FFFF
     BSR         getSrcReg
     BSR         getSrcMode
     
@@ -457,6 +459,30 @@ REG_TAIL
     BNE         LOOP
     RTS
 
+REGLIST     DC.W    0
+
+printRegList
+    ; load the register list
+    BSR         readFromFile
+    MOVE.W      D3,(REGLIST)
+    
+    ; check direction bit so we know the list format
+    MOVE.L      D4,D1
+    AND.L       #256,D1 
+    
+    ; load counter
+*    MOVE.B      #$16
+regListLoop
+    CMP.W       #0,D1
+    BEQ         postIncList
+preDecList
+
+
+    BRA         regListLoopTail
+postIncList
+
+regListLoopTail
+*    CMP.B       
 
 *   Parse the bitmask for a MOVEM instruction, and print the list of registers being moved
 *   D1 - Bitmask
@@ -464,6 +490,8 @@ REG_TAIL
 *   D2 - Bit storage
 *   D0 - Sequential register start (0-7)
 printM
+    PRINT       <'[Reg list]'>
+    RTS
     BSR         readFromFile
     MOVE.W      D3,D1
     CLR         D3
