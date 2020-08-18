@@ -44,22 +44,33 @@ firstJmpTable
 ; if 8-6 is 001 (indicating mode is addr reg) then it's MOVEA
 moveByte     
 	; Move Byte
-
-	MOVEQ   #1,D5
+    BSR         moveBitCheck
+    PRINTC      <'B'>
+	MOVEQ       #1,D5
     RTS
 
 moveLong  
 	; Move Long
-
-	MOVEQ   #1,D5
+    BSR         moveBitCheck
+    PRINTC      <'L'>
+	MOVEQ       #1,D5
     RTS
     
 moveWord  
 	; Move Word
-
-	MOVEQ   #1,D5
+    BSR         moveBitCheck
+    PRINTC      <'W'>
+	MOVEQ       #1,D5
     RTS
 
+moveBitCheck
+    isoBitsM    D4,#8,#6
+    CMP.B       #%001,D0
+    BEQ         invalidOpcode
+    PRINT       <'MOVE.'>
+    setFlagS    #$99F
+    setFlagD    #$19D
+    RTS
 ************************************************************
 **             NOT, NOP, RTS, JSR, MOVEM, LEA             **
 ************************************************************
@@ -85,10 +96,6 @@ code0100
     BEQ         sub_jsr
     
     ; LEA and CHK are wildcards because their 11-8's aren't constant
-    ; let's check for them specifically before the other instructions
-    ; I should also check for MOVEM if possible due to variable bit 10
-    
-    ; isoBitsM    D4,#8,#6
     ; since we already have bits 11-6 in D0 we don't need to call isoBitsM again
     ANDI.B      #%111,D0
     CMP.B       #%110,D0
@@ -118,28 +125,34 @@ code0100
 ; Instruction-specific subroutines
 sub_not
     PRINT       <'NOT'>,ENDL
-    setFlagS    #$19D
 	MOVEQ       #8,D5
+    setFlagS    #$19D
     RTS
 sub_nop
 	PRINT       <'NOP'>,ENDL
+	; return early
 	MOVEA       A2,SP
 	RTS
 sub_rts
     PRINT       <'RTS'>,ENDL
+    ; return early
 	MOVEA       A2,SP
 	RTS
 sub_jsr
-    PRINT       <'JSR'>,ENDL
+    PRINT       <'JSR'>
 	MOVEQ       #9,D5
+	setFlagS    #$184
     RTS    
 sub_movem
     PRINT       <'MOVEM'>
 	MOVEQ       #2,D5
+	setFlagS    #$18C
+	setFlagD    #$194
     RTS
 sub_lea
     PRINT       <'LEA'>
 	MOVEQ       #7,D5
+	setFlagS    #$184
     RTS
 
 
@@ -148,19 +161,14 @@ sub_lea
 ************************************************************
 **               Branch (BRA, BEQ, BGT, BLE)              **
 ************************************************************
-branchIdentify  
-*	ILLEGAL		; as a test breakpoint
-	isoBitsM    D4,#11,#8
-	LEA         branchJmpTable,A0  
-	
-	; BSR so we can return here to calc displacement
-	BSR			calcJmpOffset
-	
-	; set the instruction type
+branchIdentify
+    ; set the instruction type
 	MOVEQ       #10,D5
-	; TODO: displacement shit. Might need to generate a label (which would be aids)
-	; complete this code later
-    RTS
+	
+	; load branch table addr and jump
+	isoBitsM    D4,#11,#8
+	LEA         branchJmpTable,A0	
+	BRA			calcJmpOffset
 
 ; 0110
 branchJmpTable
@@ -219,9 +227,9 @@ code1000
 	isoBitsM    D4,#8,#6
 	CMP.W       #%011,D0
 	BNE         invalidOpcode
-	; we know the input is DIVU, so do something now....
     PRINT       <'DIVU'>
 	MOVEQ       #6,D5
+	setFlagS    #$99D
     RTS
 
 
@@ -236,8 +244,6 @@ subIdentify
     ; SUBI has different 15-12 bits so we don't worry about it  
     
     BSR         addSubHelper
-    
-	; do stuff
     PRINT       <'SUB'>
     RTS
     
@@ -267,17 +273,18 @@ code1100
 *	BEQ         sub_muls
 	; ANDI has different 15-12 bits than AND
 	; AND has every bit after 12 non-constant
-	; so AND will be determined by ruling out other opcodes
+	; so AND is determined by ruling out other opcodes
 	
 sub_and
     PRINT       <'AND'>
 	MOVEQ       #3,D5
-*	MOVE.W  ,(S_MODE_FLAGS)
+	setFlagS    #$19D
     RTS
 
 sub_muls
     PRINT       <'MULS'>
 	MOVEQ       #6,D5
+	setFlagS    #$99D
     RTS
 
 ************************************************************
@@ -286,11 +293,8 @@ sub_muls
 addIdentify 
     ; same format as SUB apart from bits 15-12
     BSR         addSubHelper
-    
-    ; do stuff with ADD
     PRINT       <'ADD'>
     RTS
-
 
 ; helper function for sub and add to reduce duplicate code
 ; branches to invalidOpcode for ADDX/SUBX and ADDA/SUBA
@@ -310,10 +314,7 @@ addSubHelper
     BEQ         invalidOpcode
     ; if we got here, the opcode is a valid sub/add
 	MOVEQ       #3,D5
-	; set instruction type
-	isoBitsM    D4,#8,#8
-	ADD.B       D0,D5
-	
+    setFlagS    #$19D
     RTS
 
 ************************************************************
@@ -327,6 +328,7 @@ shiftIdentify
     LEA         shiftJmpTable,A0  
     CMP.B       #%11,D0
     BNE         typeTwo
+    setFlagS    #$19C
 typeOne
     ; for type one, we need to check bits 10-9
     isoBitsM    D4,#10,#9
@@ -339,7 +341,6 @@ typeTwo
     BRA         calcJmpOffset
 	
 shiftJmpTable
-    ; TODO: add subroutines for ASd and LSd
     JMP			sub_asd ; for ASR/ASL
     
     JMP			sub_lsd ; for LSR/LSL
@@ -358,29 +359,16 @@ sub_lsd
 
     
 printShiftDirection
-    BSR         checkDirection
-    CMP         #0,D0
+    ; first check the direction bit
+    MOVE        D4,D0
+    ANDI.L      #256,D0
+    ; if result is 0, it's right
     BEQ         shiftR
     PRINTC      <'L'>
     RTS
 shiftR
     PRINTC      <'R'>
     RTS
-    
-checkDirection
-    MOVE        D4,D0
-    ANDI.L      #256,D0
-    ; if result is 0, it's right
-    RTS
-    
-
-
-
-
-
-
-
-
 
 *~Font name~Courier New~
 *~Font size~10~
