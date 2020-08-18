@@ -13,6 +13,31 @@ normalize tabing throughout source files
 
 test program
 
-separate debug mode into its own file
+delete freeHongKong once debugging is done
 
 proper spacing on printouts
+
+Cameron
+finish illegal mode checks
+	-set mode variables for each instruction in identityJmpTable
+
+Jerahmy
+finish all of the following methods and make sure they can assemble without error
+instrTypeOne
+instrTypeTwo
+instrTypeThree
+	destToSrc
+instrTypeFour
+instrTypeFive
+instrTypeSix
+instrTypeSeven
+instrTypeEight
+instrTypeNine
+instrTypeTen
+printRegD
+printRegA
+printAddress
+printAddrPostInc
+printAddrPreDec
+printAbsShort
+printAbsLong

@@ -8,6 +8,8 @@
 * printing out address of instruction + 2 by accident
 *   -this would be caused by readFromFile incrementing by 2
 *    and the printer not accounting for this
+* random function calls
+*   -caused by mistakes in a jump table structure
 
 * Register usage key:
 *   D0 = randomly used; can be freely modified
@@ -18,7 +20,7 @@
 *   D5 = 
 *   D6 = 
 *   D7 = 
-*   A0 =  
+*   A0 = 
 *   A1 = randomly used, typically holds a jump table address;
 *        can be freely modified
 *   A2 = holds a SP address used to return to IO directly;
@@ -77,6 +79,12 @@ setFlagS        MACRO
 setFlagD        MACRO
     MOVE.L      \1,(D_M0DE_FLAGS)
     ENDM
+loadFlagAddrS   MACRO
+    MOVE.L      S_MODE_FLAGS,D2
+    ENDM
+loadFlagAddrD   MACRO
+    MOVE.L      D_MODE_FLAGS,D2
+    ENDM
 **************************************************************
 * FLAG Documentation:                                        *
 * -When we identify an instruction name, such as MOVE, a     *
@@ -96,8 +104,8 @@ setFlagD        MACRO
 * 2: Address                                                 *
 * 3: Address w/ Postinc                                      *
 * 4: Address w/ Predec                                       *
-* 5: Address w/ Displacement                                 *
-* 6: Address w/ Index                                        *
+* 5: Address w/ Displacement (not required)                  *
+* 6: Address w/ Index (not required)                         *
 * 7: Absolute Short                                          *
 * 8: Absolute Long                                           *
 * 9: Program Counter w/ Displacement (not required)          *
@@ -110,37 +118,35 @@ setFlagD        MACRO
 * 16: unused                                                 *
 *                                                            *
 * Dest Mode: 11 10 9  8  7  6  5  4  3  2  1  0              *
-* MOVE:     %0  0  0  1  1  1  1  1  1  1  1  1              *done
-* MOVEM:    %0  0  0  1  1  1  1  1  1  1  1  0              *
-* ADD:      %0  0  0  1  1  1  1  1  1  1  1  1              *
-* ADD alt:  %0  0  0  1  1  1  1  1  1  1  1  1              *
+* MOVE:     %0  0  0  1  1  0  0  1  1  1  0  1 = $19D       *
+* MOVEM:    %0  0  0  1  1  0  0  1  0  1  0  0 = $194       *
+* ADD:      dest is always data reg                          *
 * SUB:      same as add                                      *
-* SUB alt:  same as add alt                                  *
-* AND:      %0  0  0  1  1  1  1  1  1  1  1  1              *
-* AND alt:  %0  0  0  1  1  1  1  1  1  1  1  1              *
-* MULS:     %0  0  0  1  1  1  1  1  1  1  1  1              *
-* DIVU:     %0  0  0  1  1  1  1  1  1  1  1  1              *
-* LEA:      never has a destination mode other than 111      *
-* NOT:      %0  0  0  1  1  1  1  1  1  1  1  1              *
-*   -technically, NOT doesn't have a dest mode, but since    *
-*    size is variable, I use this method to check
-* LSd:      %0  0  0  1  1  1  1  1  1  1  1  1              *
-* ASd:      %0  0  0  1  1  1  1  1  1  1  1  1              *
-* JSR:      dest is always A7/SP (mode 010, An 111)          *
+* AND:      same as add                                      *
+* MULS:     same as add                                      *
+* DIVU:     same as add                                      *
+* LEA:      dest is always address reg                       *
+* NOT:      N/A                                              *
+* LSd:      N/A                                              *
+* ASd:      N/A                                              *
+* JSR:      dest is always (A7)/(SP) (mode 010, An 111)      *
 *                                                            *
 * Src Mode:  11 10 9  8  7  6  5  4  3  2  1  0              *
-* MOVE:     %1  0  0  1  1  1  1  1  1  1  1  1              *
-* MOVEM:    %1  0  0  1  1  1  1  1  1  1  1  1              *
-* ADD:      %1  0  0  1  1  1  1  1  1  1  1  1              *
-* SUB:      %1  0  0  1  1  1  1  1  1  1  1  1              *
-* AND:      %1  0  0  1  1  1  1  1  1  1  1  1              *
-* MULS:     %1  0  0  1  1  1  1  1  1  1  1  1              *
-* DIVU:     %1  0  0  1  1  1  1  1  1  1  1  1              *
-* LEA:      %1  0  0  1  1  1  1  1  1  1  1  1              *
-* NOT:      no source used                                   *
-* LSd:      %1  0  0  1  1  1  1  1  1  1  1  1              *
-* ASd:      %1  0  0  1  1  1  1  1  1  1  1  1              *
-* JSR:      %0  0  0  1  1  1  1  1  0  0  0  0              *done 
+* MOVE:     %1  0  0  1  1  0  0  1  1  1  1  1 = $99F       *
+* MOVEM:    %0  0  0  1  1  0  0  0  1  1  0  0 = $18C       *
+* ADD:      %0  0  0  1  1  0  0  1  1  1  0  1 = $19D       *
+* ADD alt:  %0  0  0  1  1  0  0  1  1  1  0  0 = $19C       *
+* SUB:      %0  0  0  1  1  0  0  1  1  1  0  1 = $19D       *
+* SUB alt:  %0  0  0  1  1  0  0  1  1  1  0  0 = $19C       *
+* AND:      %0  0  0  1  1  0  0  1  1  1  0  1 = $19D       *
+* AND alt:  %0  0  0  1  1  0  0  1  1  1  0  0 = $19C       *
+* MULS:     %1  0  0  1  1  0  0  1  1  1  0  1 = $99D       *
+* DIVU:     %1  0  0  1  1  0  0  1  1  1  0  1 = $99D       *
+* LEA:      %0  0  0  1  1  0  0  0  0  1  0  0 = $184       *
+* NOT:      %0  0  0  1  1  0  0  1  1  1  0  1 = $19D       *
+* LSd:      %0  0  0  1  1  0  0  1  1  1  0  0 = $19C       *
+* ASd:      %0  0  0  1  1  0  0  1  1  1  0  0 = $19C       *
+* JSR:      %0  0  0  1  1  0  0  0  0  1  0  0 = $184       *
 *                                                            *
 *                                                            *
 * Note: we don't have a special case for instructions that   *
@@ -153,8 +159,8 @@ setFlagD        MACRO
 checkMode
 ; D3 contains the mode we must check
 ; D5 contains the arg value (Xn)
-; A3 contains the address of either S_MODE_FLAGS or D_MOVE_FLAGS
-    CMP.W       #0,(A3)
+; D2 contains the address of either S_MODE_FLAGS or D_MOVE_FLAGS
+    CMP.W       #0,(D2)
     ; if the flag is 0, the instruction doesn't use the arg
     ; note: this indicates whether an instruction that CAN use an arg doesn't do so;
     ; we aren't checking instructions that never have an arg type
@@ -166,12 +172,12 @@ checkMode_1
     CMP.B       #%111,D3
     BNE         checkMode_2
     ADD         D5,D3
-    ; I add arg value to mode here because 111 has several cases
+    ; I add arg value to mode here because 111 has several cases;
     ; the flag variable has these cases following consecutively after mode
     ; ie: 7-11
 checkMode_2
 ;``` I forget if args should be D3 and D3 rather than D3 and D3 - 1
-    isoBitsM    (A3),D3,D3
+    isoBitsM    (D2),D3,D3
     CMP         #0,D0
     BEQ         badArg
     RTS
@@ -220,6 +226,17 @@ invalidSize
 ************************************************************
 **              error print-outs for program              **
 ************************************************************ 
+* When the disassembler encounters an erroneous part of a
+* program being disassembled, it prints out an error to
+* represent this:
+*
+* bad instruction =
+* "Error: Invalid opcode! (this instruction is not supported)"
+* 
+* bad opcode size = ".?"
+*
+* bad argument = "[invalid arg]"
+
 invalidOpcode	
 	PRINT       <'Error: Invalid opcode! '>
 	PRINT       <'(this instruction is not supported)'>,ENDL
@@ -237,6 +254,17 @@ invalidOpcode
 
 badArg
     PRINT       <'[illegal arg]'>
+skipArgPrint
+; skips over the arg value printer since we already printed [invalid arg]
+; this assumes the following logic in parseInstructionMain:
+; ...
+; BSR   checkMode
+; BSR   printArg
+; ...
+    ; add
+    ; todo: check if 4 or 2 length for BSR printArg
+    ;```
+    ADD         4,(SP)
     RTS
     
     
@@ -270,6 +298,7 @@ IMMCMP      MACRO
             \3  \4
         ENDC
         ENDM
+
 
 
 
