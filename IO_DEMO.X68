@@ -159,7 +159,7 @@ P_CONTINUE
 ;printing an instruction and updating our instruction pointer
     BSR     SUB_printRegister       ;print the value of A6 out to console 
     BSR     parseInstructionMain    ;print out the disassembled instruction
-    ADD.L   #1,A6
+    ADD     #1,A5                   ;update line counter
     
 ;reading how full our screen is
     CMP.L   #31,A5                  ;if our screen is full we need to ask the user to press ender
@@ -174,6 +174,7 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END START
+
 
 
 

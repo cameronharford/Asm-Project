@@ -6,6 +6,7 @@ parseInstructionMain:
     MOVEA       SP,A2
     
     BSR         findOpcodeMain
+    
     ; I think this should parse the instructions by common patterns/formats
     ; For ex, many opcodes use bits 0-2 for their source arg, and bits 3-5 for the arg mode/type
     ; We could use a common method to parse this section
@@ -13,7 +14,8 @@ parseInstructionMain:
     ; Based on this flag, we know the instruction's format
     LEA         instrTypeTable,A0
     ; D5 currently contains the index for the jump table
-    MOVE.B      D5,D0
+    MOVE.L      D5,D0
+    SUB         #1,D0
     BSR         calcJmpOffset
     
     ; TODO: move this logic to each of the instruction type subs
@@ -75,15 +77,14 @@ instrTypeTable
 
 instrTypeOne
 ; for MOVE
-    ; print size first
-    BSR         printOpcodeSize
+    PRINTT
     
     ; check source mode
     BSR         getSrcReg
     BSR         getSrcMode
     ; print source arg (or invalid arg)
     ; comma
-    PRINTC  <','>
+    PRINTC      <','>
     
     ; check dest mode
     BSR         getDestReg
@@ -93,13 +94,21 @@ instrTypeOne
 
 instrTypeTwo
 ; for MOVEM
+    PRINTC      <'.'>
     ; print size first
     ; size is determined by bit 6
     ; it's either 0 (W) or 1 (L)
-    BSR         printOpcodeSize
-    
-    
+    ; TODO: fix
+    isoBitsM    D4,#6,#6
+    CMP.B       #0,D0
+    BEQ         movemWordSize
+    PRINTC      <'L'>
+    BRA         instrTypeTwo_2
+movemWordSize
+    PRINTC      <'W'>
+instrTypeTwo_2
     ; get direction bit to determine the print order
+    PRINTT
     isoBitsM    D4,#10,#10
     CMP.B       #0,D0   
     BEQ         regMem  ; Direction 0 -> register to memory
@@ -113,8 +122,10 @@ regMem
     BSR         getSrcMode
 
 memReg
-        
-    
+    BSR         getSrcReg
+    BSR         getSrcMode
+    PRINTC      <','>
+    BSR         printM
     RTS
     
 instrTypeThree
@@ -128,6 +139,7 @@ instrTypeThree
     EOR.W       D0,(sModeFlag)
     
     BSR         printOpcodeSize
+    PRINTT
     
     ; check direction bit to determine the print order
     CMP.B       #0,D1 
@@ -161,6 +173,7 @@ destToSrc
 
 instrTypeFour
 ; for LSd/ASd (type 1, single arg)
+    PRINTT
     ; type 1 doesn't have a size, so no need to print it
     BSR         getSrcReg
     BSR         getSrcMode
@@ -170,6 +183,7 @@ instrTypeFour
 instrTypeFive
 ; for LSd/ASd (type 2)
     BSR         printOpcodeSize
+    PRINTT
     ; type 2 uses an immediate between 1-8
     ; since it uses only 3 bits for the value, %000 = 8
     isoBitsM    D4,#5,#5
@@ -199,6 +213,8 @@ shiftDest
 
 instrTypeSix
 ; for DIVU/MULS
+    PRINTT
+    PRINTT
     ;check source mode
     BSR         getSrcReg
     BSR         getSrcMode
@@ -211,10 +227,13 @@ instrTypeSix
 
 instrTypeSeven
 ; for LEA
+    PRINTT
+    PRINTT
     ;check source mode
     BSR         getSrcReg
     BSR         getSrcMode
-    ;print source arg
+    
+    PRINTC      <','>
     
     ; print dest address register
     BSR         getDestReg
@@ -224,39 +243,49 @@ instrTypeSeven
 instrTypeEight
 ; for NOT
     BSR         printOpcodeSize
-    ;check source mode
+    PRINTT
     BSR         getSrcReg
     BSR         getSrcMode
-    ;print source arg
     RTS
 
 instrTypeNine
 ; for JSR
-    ; check source mode
+    PRINTT
+    PRINTT
     BSR         getSrcReg
     BSR         getSrcMode
-    ; print source arg
     RTS
     
 instrTypeTen
 ; for branching (BRA/BEQ/BGT/BLE)
 ; TODO: add sanity check for displacement addr
+    PRINTT
+    PRINTT
     BSR         printDisp
     
     RTS
 
 getSrcMode
     isoBitsM    D4,#5,#3
+    ; check for illegal modes
+    LEA         sModeFlag,A1
+    MOVE.L      D0,D5
+    BSR         checkMode
+    
     LEA         modeJmpTable,A0
     BRA         calcJmpOffset
     
 getDestMode
     isoBitsM    D4,#8,#6
+    ; check for illegal modes
+    LEA         dModeFlag,A1
+    MOVE.L      D0,D5
+    BSR         checkMode
+    
     LEA         modeJmpTable,A0
     BRA         calcJmpOffset
     
 getSrcReg
-    ; typically used for printing, but also used for a jmp table index
     isoBitsM    D4,#2,#0
     MOVE.B      D0,D3
     RTS
@@ -284,20 +313,23 @@ modeJmpTable
     NOP
     ; case 111
     MOVE.B      D3,D0
-    LEA         modeJmpTable111,A0
+    LEA         modeJmpTableExtra,A0
     JMP         calcJmpOffset
         
     
-modeJmpTable111
+modeJmpTableExtra
 ; do all of these modes require an extension?
 ; these cases do: 0,1,100
     JMP         printAbsShort ; Abs Short
     
     JMP         printAbsLong ; Abs Long
-    
-    JMP         badArg ; PC w/ Displacement
+    RTS
     NOP
-    JMP         badArg ; PC w/ Index
+*    JMP         badArg ; PC w/ Displacement
+    NOP
+    RTS
+    NOP
+*    JMP         badArg ; PC w/ Index
     NOP
     JMP         printImmediate ; Immediate
     ; illegal for MOVE (dest), ADD, SUB, AND, 
@@ -307,15 +339,16 @@ modeJmpTable111
     
     ; there are no valid cases for 101-111 so opcode is universally illegal
     ; 101
-    NOP
+    RTS
     NOP
     NOP
     ; 110
-    NOP
+    RTS
     NOP
     NOP
     ; 111
-    JMP         badArg
+    RTS
+*    JMP         badArg
     
 printRegD
     PRINTC      <'D'>
@@ -376,7 +409,7 @@ printAbsLong
     
 printImmediate
 *    PRINT   <'immediate'>
-    PRINTC      <'#'>
+    PRINT       <'#$'>
     
     BSR         getOpcodeSize   ; Puts binary for instruction size in D0 (00 for byte, 01 for word, 10 for long)
     BSR         readFromFile    
@@ -400,7 +433,7 @@ DONE
 *   D1 - Char storage
 
 printReg
-    MOVE.L      #8,D5
+    MOVE.L      #4,D5
 LOOP
     MOVE.L      D3,D1
     CLR         D2
@@ -424,7 +457,6 @@ REG_TAIL
     SUB.B       #1,D5
     CMP.B       #0,D5
     BNE         LOOP
-    PRINTC      <' '>
     RTS
 
 
@@ -460,7 +492,7 @@ D_START
 D_END
     MOVE.B      D4,D5
     SUBI.B      #1,D5   ; Get final successful register check
-    CMPI.W      D5,D0   ; If current register > start register, series ended and print both
+    CMP.W       D5,D0   ; If current register > start register, series ended and print both
     BGT         D_PRINT_MULT
     BEQ         D_PRINT ; Current register = start register, only a single register was moved
     BRA         D_TAIL  ; Otherwise, series hasn't started yet so ignore
@@ -468,7 +500,6 @@ D_END
 D_PRINT
     MOVE.B      D0,D3
     BSR         printRegD
-    PRINTC      <' '>
     BRA         D_TAIL
 
 D_PRINT_MULT
@@ -510,7 +541,7 @@ A_START
 A_END
     MOVE.B      D4,D5
     SUBI.B      #1,D5   ; Get final successful register check
-    CMPI.W      D5,D0   ; If current register > start register, series ended and print both
+    CMP.W       D5,D0   ; If current register > start register, series ended and print both
     BGT         A_PRINT_MULT
     BEQ         A_PRINT ; Current register = start register, only a single register was moved
     BRA         A_TAIL  ; Otherwise, series hasn't started yet so ignore
@@ -518,7 +549,6 @@ A_END
 A_PRINT
     MOVE.B      D0,D3
     BSR         printRegA
-    PRINTC      <' '>
     BRA         A_TAIL
 
 A_PRINT_MULT
@@ -544,6 +574,15 @@ printDisp
     MOVE.L  A1,D3
     JMP     printReg
     RTS
+
+
+
+
+
+
+
+
+
 
 
 

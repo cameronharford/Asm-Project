@@ -7,13 +7,15 @@
 
 ;Kelly's test
 ;TEST_TEST.bin $7000 - $7373
-filename   dc.b 'TEST_MEGA.bin',0
+*filename   dc.b 'TEST_MEGA.bin',0
+*filename   dc.b 'TEST_TEST.bin',0
+filename   dc.b 'TEST_DEMO.bin',0
 debugStart EQU  $7000
 debugEnd   EQU  $75E8
 
 START
 
-    JMP WELCOME
+    ;JMP WELCOME
 
     LEA     filename,A1
     RUNTRAP <#13>
@@ -159,7 +161,7 @@ PR_LOOP_TAIL
     SUB.B   #1,D3
     CMP.B   #0,D3
     BNE     PR_LOOP
-    PRINT   <' '>
+    PRINTT
     RTS
 
 ************************************************************
@@ -174,7 +176,7 @@ SUB_printer
 P_CLEARSCREEN
     MOVE.L  #0,A5
     PRINT   <'Please press enter to continue.'>
-    RUNTRAP <#2>
+    RUNTRAP <#5>
 P_CONTINUE   
 ;checking if we are at the end of our file
     LEA     endAddress,A0
@@ -198,9 +200,11 @@ P_CONTINUE
 instrPrinter
     MOVE.L  #16,D2
     RUNTRAP <#15>
-    PRINT <' '>
+*    PRINT   <' '>
+    PRINTT
     
     BSR     parseInstructionMain
+    ADD     #1,A5
     
 ;reading how full our screen is
     CMP.L   #31,A5                  ;if our screen is full we need to ask the user to press ender
@@ -214,7 +218,12 @@ P_DONE
     BEQ     START
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
-    END START
+    END     START
+
+
+
+
+
 
 *~Font name~Courier New~
 *~Font size~10~

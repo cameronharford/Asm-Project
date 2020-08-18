@@ -4,6 +4,8 @@ calcJmpOffset
     ; each jmp table entry is 6 bytes (2 for word opcode, 4 for jump address)
     MULU        #6, D0     	*Form offset     
     JMP         0(A0, D0)   *Jump indirect with index
+
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

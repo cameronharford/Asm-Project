@@ -73,10 +73,10 @@ sModeFlag       DC.W    0
 dModeFlag       DC.W    0
 
 setFlagS        MACRO
-    MOVE.L      \1,(sModeFlag)
+    MOVE.W      \1,(sModeFlag)
     ENDM
 setFlagD        MACRO
-    MOVE.L      \1,(dModeFlag)
+    MOVE.W      \1,(dModeFlag)
     ENDM
 loadFlagAddrS   MACRO
     MOVE.L      sModeFlag,A0
@@ -157,36 +157,44 @@ loadFlagAddrD   MACRO
 
 
 checkMode
-; D3 contains the mode we must check
-; D5 contains the arg value (Xn)
+; D5 contains the mode we must check
+; D3 contains the arg value (Xn)
 ; A0 contains the address of either S_MODE_FLAGS or D_MOVE_FLAGS
-    CMP.W       #0,(A0)
-    ; if the flag is 0, the instruction doesn't use the arg
-    ; note: this indicates whether an instruction that CAN use an arg doesn't do so;
-    ; we aren't checking instructions that never have an arg type
-    ; ex: NOT never has a source arg, so it won't call this function
-    BNE         checkMode_1
-    ; therefore, we can just return
-    RTS
+*    RTS
+*    CMP.W       #0,(A0)
+*    ; if the flag is 0, the instruction doesn't use the arg
+*    ; note: this indicates whether an instruction that CAN use an arg doesn't do so;
+*    ; we aren't checking instructions that never have an arg type
+*    ; ex: NOT never has a source arg, so it won't call this function
+*    BNE         checkMode_1
+*    ; therefore, we can just return
+*    RTS
 checkMode_1
-    CMP.B       #%111,D3
+*    RTS
+*    PRINT       <' MODE: '>
+*    PRINTN      D5
+*    PRINT       <' FLAG: '>
+*    PRINTN      (A0)
+*    PRINTC      <' '>
+    CMP.B       #%111,D5
     BNE         checkMode_2
-    ADD         D5,D3
+    ADD         D3,D5
     ; I add arg value to mode here because 111 has several cases;
     ; the flag variable has these cases following consecutively after mode
     ; ie: 7-11
 checkMode_2
 ;``` I forget if args should be D3 and D3 rather than D3 and D3 - 1
-    isoBitsM    (A0),D3,D3
-    CMP         #0,D0
+*    isoBitsM    (A0),D5,D5
+*    CMP         #0,D0
+*    BEQ         badArg
+*    RTS
+    ; if the macro doesn't work:
+    MOVE.W      #1,D2
+*    MOVE.W      (A1),D2
+    LSL.W       D5,D2
+    AND.W       D2,(A1)
     BEQ         badArg
     RTS
-*    ; if the macro doesn't work:
-*    MOVE.L      #1,D0
-*    MOVE.L      (A3),D2
-*    LSL.L       D3,D0
-*    AND.L       D0,D2
-*    BEQ         badArg
 
 
 ************************************************************
@@ -230,16 +238,15 @@ invalidSize
 * program being disassembled, it prints out an error to
 * represent this:
 *
-* bad instruction =
-* "Error: Invalid opcode! (this instruction is not supported)"
+* bad instruction = "Error: Invalid opcode!"
 * 
 * bad opcode size = ".?"
 *
 * bad argument = "[invalid arg]"
 
 invalidOpcode	
-	PRINT       <'Error: Invalid opcode! '>
-	PRINT       <'(this instruction is not supported)'>,ENDL
+	PRINT       <'Error: Invalid opcode! '>,ENDL
+*	PRINT       <'(this instruction is not supported)'>,ENDL
 
     ; to avoid memory leaks with the stack, I need to reset
 	; its ptr to what it was when findOpcodeMain was called
@@ -248,24 +255,18 @@ invalidOpcode
 	; invalid, there's no need to read the instruction args
 	; this also allows me to use RTS, since SP now points at 
 	; the return address
-;```
 	RTS
 ; <instr_name>.<instr_size>(tab)(tab)<arg2(source)>,<arg1(dest)>
 
 badArg
     PRINT       <'[illegal arg]'>
+*    RTS
 skipArgPrint
 ; skips over the arg value printer since we already printed [invalid arg]
-; this assumes the following logic in parseInstructionMain:
-; ...
-; BSR   checkMode
-; BSR   printArg
-; ...
-    ; add
-    ; todo: check if 4 or 2 length for BSR printArg
+; forces RTS to use previous branch call return address by changing SP
     ;```
-*    ADD         4,(SP)
-*    RTS
+    ADD         #4,SP
+    RTS
     
     
 
@@ -283,21 +284,9 @@ RUNTRAP     MACRO
     TRAP    #15
     ENDM
 
-; TODO: documentation
-; compares an immediate (arg 1) against data pointed to by an address (arg 2)
-; arg 3: optional branch instruction name (ex: BEQ)
-; arg 4: optional branch location (label name or address)
-IMMCMP      MACRO
-        IFLT NARG-2                       ;if not 2+ arguments
-            FAIL ERROR, IMMCMP requires at least 2 arguments
-            MEXIT
-        ENDC
-        ; macro witchcraft
-        CMPI.\0 \1,(\2)
-        IFEQ NARG-4
-            \3  \4
-        ENDC
-        ENDM
+
+
+
 
 
 

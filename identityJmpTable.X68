@@ -161,7 +161,7 @@ sub_lea
 ************************************************************
 branchIdentify
     ; set the instruction type
-	MOVEQ       #10,D5
+	MOVE.L      #10,D5
 	
 	; load branch table addr and jump
 	isoBitsM    D4,#11,#8
@@ -178,8 +178,8 @@ branchJmpTable
 	NOP
 	JMP			invalidOpcode       * BLS not required
 	NOP
-	JMP			invalidOpcode       * BCC not required
-	NOP
+	JMP			sub_bcc
+	
 	JMP			invalidOpcode       * BCS not required
 	NOP
 	JMP			invalidOpcode       * BNE not required
@@ -204,6 +204,9 @@ branchJmpTable
 
 sub_bra
     PRINT       <'BRA'>
+    RTS
+sub_bcc
+    PRINT       <'BCC'>
     RTS
 sub_beq
     PRINT       <'BEQ'>
@@ -367,6 +370,8 @@ printShiftDirection
 shiftR
     PRINTC      <'R'>
     RTS
+
+
 
 
 

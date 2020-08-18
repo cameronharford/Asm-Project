@@ -52,9 +52,14 @@ PRINTN    MACRO
 
 PRINTC      MACRO
     MOVE.B  #\1,D1
-    MOVE.B  #6,D1
+    MOVE.B  #6,D0
     TRAP    #15
     ENDM
+
+PRINTT   MACRO
+    PRINTC  <9>
+    ENDM
+
 
 *~Font name~Courier New~
 *~Font size~10~

@@ -9,9 +9,16 @@
     INCLUDE     "parseInstructionMain.X68"
 START:
     ; D0 should have the 16 bit opcode (may change this later)
-    PRINT   <'"SPACE TEST            "'>
     PRINT   <'Start of test'>,ENDL
     
+    PRINT   <'Tab test:'>
+    PRINTT
+    PRINTT
+    PRINTC  <'0'>
+    PRINTT
+    PRINTC  <'C'>
+    PRINT   <''>,ENDL
+
 *    MOVE.W  #$4E71,D0 * NOP, working
 *    MOVE.W  #$6000,D0 * BRA, working
 *    MOVE.W  #$9378,D0 * SUB, working
@@ -36,17 +43,18 @@ START:
 
 *    MOVE.W  #$D202,D0 * ADD.B       D2,D1
 *    BSR     parseInstructionMain
-    
-    LEA     ADDBYTES,A4
+
+    LEA     ADDBYTES,A6
+*    LEA     BRANCHBYTES,A6
 loopstart
-    MOVE.W  (A4)+,D6
+    MOVE.W  (A6),D6
     CMP.W   #$FFFF,D6
     BEQ     loopend
     CLR     D0
     MOVE.W  D6,D0
-    MOVEM   A4/D6,-(SP)
+    MOVE    D6,-(SP)
     BSR     parseInstructionMain
-    MOVEM   (SP)+,A4/D6
+    MOVE    (SP)+,D6
     BRA     loopstart
 loopend
     PRINT   <'end of test'>,ENDL
@@ -59,18 +67,44 @@ ADDBYTES    DC.W    $D202 ; ADD.B
 *            DC.W    $B240 ; CMP
 *            DC.W    $4440 ; NEG
 *            DC.W    $3652 ; MOVEA
-            DC.W    $48A7 ; MOVEM
+            DC.W    $4C95,$1777 ; MOVEM
 *            DC.W    $8451 ; OR
 *            DC.W    $E6D9 ; ROR
-            DC.W    $E2D9 ; LSR
-            DC.W    $E32A ; LSL
-*            DC.W    $ ; 
+            DC.W    $E2F8,$1234,$E2D9,$E2E2 ; LSR
+            DC.W    $E38B ; LSL
+            DC.W    $E32A,$E36A,$E3AA ; 
 *            DC.W    $ ; 
 *            DC.W    $ ; 
 *            DC.W    $ ; 
 *            DC.W    $ ; 
             DC.W    $FFFF ; END
+            
+            
+BRANCHBYTES DC.W    $6000,$003E
+            DC.W    $6100,$003C
+            DC.W    $6200,$003A
+            DC.W    $6300,$0038
+            DC.W    $6400,$0036
+            DC.W    $6500,$0034
+            DC.W    $6600,$0032
+            DC.W    $6700,$0030
+            DC.W    $6800,$002E
+            DC.W    $6900,$002C
+            DC.W    $6A00,$002A
+            DC.W    $6B00,$0028
+            DC.W    $6C00,$0026
+            DC.W    $6D00,$0024
+            DC.W    $6E00,$0022
+            DC.W    $6F00,$0020
+            DC.W    $FFFF
+            
     END    START        ; last line of source
+
+
+
+
+
+
 
 
 
