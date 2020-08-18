@@ -7,11 +7,15 @@
 
 ;Kelly's test
 ;TEST_TEST.bin $7000 - $7373
-*filename   dc.b 'TEST_MEGA.bin',0
-*filename   dc.b 'TEST_TEST.bin',0
-filename   dc.b 'TEST_DEMO.bin',0
+
+;MOVEM
+;TEST_MOVEM.bin $7000 - $706D
+
+
+;filename   dc.b 'TEST_MEGA.bin',0
+filename   dc.b 'TEST_MOVEM.bin',0
 debugStart EQU  $7000
-debugEnd   EQU  $75E8
+debugEnd   EQU  $706D
 
 START
 
@@ -218,6 +222,7 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END     START
+
 
 
 

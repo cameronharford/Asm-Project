@@ -1,8 +1,8 @@
     ORG $1000
     INCLUDE  "parseInstructionMain.x68" 
-
+    
+    
 START
-
 ************************************************************
 **                 main program entry                     **
 ************************************************************
@@ -135,7 +135,7 @@ PR_LOOP_TAIL
     SUB.B   #1,D3
     CMP.B   #0,D3
     BNE     PR_LOOP
-    PRINT   <' '>
+    PRINTT
     RTS
 
 ************************************************************
@@ -150,7 +150,7 @@ SUB_printer
 P_CLEARSCREEN
     MOVE.L  #0,A5
     PRINT   <'Please press enter to continue.'>
-    RUNTRAP <#2>
+    RUNTRAP <#5>
 P_CONTINUE   
 ;checking if we are at the end of our file
     LEA     endAddress,A0
@@ -158,8 +158,8 @@ P_CONTINUE
     BGT     P_DONE                  ;jump to the ask-to-read-another-file printout and termination
 ;printing an instruction and updating our instruction pointer
     BSR     SUB_printRegister       ;print the value of A6 out to console 
-    BSR     parseInstructionMain    ;print out the disassembled instruction
-    ADD     #1,A5                   ;update line counter
+    BSR     parseInstructionMain
+    ADD     #1,A5                   ;update how many lines we have printed out
     
 ;reading how full our screen is
     CMP.L   #31,A5                  ;if our screen is full we need to ask the user to press ender
@@ -173,7 +173,10 @@ P_DONE
     BEQ     START
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
-    END START
+    END     START
+
+
+
 
 
 
