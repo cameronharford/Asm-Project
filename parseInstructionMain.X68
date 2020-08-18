@@ -136,7 +136,7 @@ instrTypeThree
     
     ; adjust mode restrictions to account for direction
     ; if dir is 1, src mode can't be Dn
-    EOR.W       D0,(sModeFlag)
+    ; EOR.W       D0,(sModeFlag)
     
     BSR         printOpcodeSize
     PRINTT
@@ -154,7 +154,7 @@ instrTypeThree
     PRINTC      <','>
     
     BSR         getDestReg
-    BSR         getDestMode
+    BSR         printRegD   ; Print register
     
     RTS
 destToSrc
