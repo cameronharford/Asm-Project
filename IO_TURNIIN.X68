@@ -1,39 +1,24 @@
     ORG $1000
-    INCLUDE  "parseInstructionMain.x68" 
-    
-;Death mode    
-;TEST_MEGA.bin $7000 - $75E8
-
-;Kelly's test
-;TEST_TEST.bin $7000 - $7373
-filename   dc.b 'TEST_MEGA.bin',0
-debugStart EQU  $7000
-debugEnd   EQU  $75E8
-
-
-START
-    
-    ;control debug mode by uncommenting this
-    ;JMP WELCOME
-
-SUB_DEBUG
-    LEA     filename,A1
-    RUNTRAP <#13>
-    RUNTRAP <#51>
-    MOVE.L  #debugStart,A1
-    MOVE.L  #debugEnd,D2
-    RUNTRAP <#53>
-    PRINT   <'Disassembler Debug Mode!'>,ENDL
-    MOVE.L  #$7000,(startAddress)
-    MOVE.L  #$75E8,(endAddress)
-    JSR     SUB_printer 
-
+    INCLUDE  "parseInstructionMain.x68"
+*==========================================================*
+            *PowerPC is Better 68k Disassembler*
+            
+                    *Cameron Haverford*
+                      *Isaac Jones*
+                      *Kelly Pratama*
+                    *Jerahmy Bindon*
+                    
+                  *Written: Summer 2020*
+                 
+         *A disassembler for 68k. Written in 68k.*
+*==========================================================*
 
 ************************************************************
 **                 main program entry                     **
 ************************************************************
 *A5 - the console window current line
 *A6 - our current memory location to read for the opcode requester
+START
 WELCOME
     MOVE.L  #$FF00,D1              ;clear the screen in case the program is being re-run
     RUNTRAP <#11>
@@ -161,44 +146,8 @@ P_CONTINUE
     CMP.L   (A0),A6                 ;check if we are done reading the file
     BGT     P_DONE                  ;jump to the ask-to-read-another-file printout and termination
 ;printing an instruction and updating our instruction pointer
-    BSR     SUB_printRegister       ;print the value of A6 out to console 
-   
-
-
-
- 
-; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
-; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
-; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
-    MOVE.L  (A6),D1
-    LSR.L   #8,D1
-    LSR.L   #8,D1
-    CMP.L   #$1000,D1
-    BGE     printSpace
-    PRINT   <'0'>
-    CMP.L   #$100,D1
-    BGE     printSpace
-    PRINT   <'0'>
-    CMP.L   #$10,D1
-    BGE     printSpace
-    PRINT   <'0'>
-printSpace 
-    MOVE.L  #16,D2
-    RUNTRAP <#15>
-    PRINT <' '>
-    
+    BSR     SUB_printRegister       ;print the value of A6 out to console   
     BSR     parseInstructionMain
-    ;
-    ;
-    ; KILL ME
-    
-    ADD.L   #2,A6
-; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
-; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
-; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
-
-
-
 
 
     
@@ -216,6 +165,7 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END START
+
 
 
 *~Font name~Courier New~
