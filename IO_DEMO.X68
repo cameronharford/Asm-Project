@@ -1,31 +1,7 @@
     ORG $1000
     INCLUDE  "parseInstructionMain.x68" 
-    
-    
-;Death mode    
-;TEST_MEGA.bin $7000 - $75E8
-
-;Kelly's test
-;TEST_TEST.bin $7000 - $7373
-filename   dc.b 'TEST_MEGA.bin',0
-debugStart EQU  $7000
-debugEnd   EQU  $75E8
 
 START
-
-    JMP WELCOME
-
-    LEA     filename,A1
-    RUNTRAP <#13>
-    RUNTRAP <#51>
-    MOVE.L  #debugStart,A1
-    MOVE.L  #debugEnd,D2
-    RUNTRAP <#53>
-    PRINT   <'Disassembler Debug Mode!'>,ENDL
-    MOVE.L  #debugStart,(startAddress)
-    MOVE.L  #debugEnd,(endAddress)
-    JSR     SUB_printer 
-
 
 ************************************************************
 **                 main program entry                     **
@@ -182,25 +158,8 @@ P_CONTINUE
     BGT     P_DONE                  ;jump to the ask-to-read-another-file printout and termination
 ;printing an instruction and updating our instruction pointer
     BSR     SUB_printRegister       ;print the value of A6 out to console 
-    
-    MOVE.L  (A6),D1
-    LSR.L   #8,D1
-    LSR.L   #8,D1
-    CMP.L   #$1000,D1
-    BGE     instrPrinter
-    PRINT   <'0'>
-    CMP.L   #$100,D1
-    BGE     instrPrinter
-    PRINT   <'0'>
-    CMP.L   #$10,D1
-    BGE     instrPrinter
-    PRINT   <'0'>
-instrPrinter
-    MOVE.L  #16,D2
-    RUNTRAP <#15>
-    PRINT <' '>
-    
-    BSR     parseInstructionMain
+    BSR     parseInstructionMain    ;print out the disassembled instruction
+    ADD.L   #1,A6
     
 ;reading how full our screen is
     ADD.L   #1,A5                   ;update how many lines we have printed to the screen
@@ -216,3 +175,9 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END START
+
+
+*~Font name~Courier New~
+*~Font size~10~
+*~Tab type~1~
+*~Tab size~4~
