@@ -146,8 +146,6 @@ sub_jsr
 sub_movem
     PRINT       <'MOVEM'>
 	MOVEQ       #2,D5
-	setFlagS    #$18C
-	setFlagD    #$194
     RTS
 sub_lea
     PRINT       <'LEA'>
@@ -315,7 +313,7 @@ addSubHelper
     BEQ         invalidOpcode
     ; if we got here, the opcode is a valid sub/add
 	MOVEQ       #3,D5
-    setFlagS    #$19D
+    setFlagS    #%10
     RTS
 
 ************************************************************
@@ -329,7 +327,7 @@ shiftIdentify
     LEA         shiftJmpTable,A0  
     CMP.B       #%11,D0
     BNE         typeTwo
-    setFlagS    #$19C
+    setFlagS    #0
 typeOne
     ; for type one, we need to check bits 10-9
     isoBitsM    D4,#10,#9
@@ -370,6 +368,7 @@ printShiftDirection
 shiftR
     PRINTC      <'R'>
     RTS
+
 
 
 

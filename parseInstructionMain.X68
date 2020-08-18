@@ -98,9 +98,8 @@ instrTypeTwo
     ; print size first
     ; size is determined by bit 6
     ; it's either 0 (W) or 1 (L)
-    ; TODO: fix
-    isoBitsM    D4,#6,#6
-    CMP.B       #0,D0
+    MOVE.L      D4,D0
+    AND.L       #64,D0
     BEQ         movemWordSize
     PRINTC      <'L'>
     BRA         instrTypeTwo_2
@@ -109,35 +108,37 @@ movemWordSize
 instrTypeTwo_2
     ; get direction bit to determine the print order
     PRINTT
-    isoBitsM    D4,#10,#10
-    CMP.B       #0,D0   
-    BEQ         regMem  ; Direction 0 -> register to memory
-    BNE         memReg  ; Direction 1 -> memory to register
+    MOVE.L      D4,D1
+    AND.L       #256,D1 
+    BEQ         regMem  
+    ; Direction 1 -> memory to register
+    BSR         getSrcReg
+    BSR         getSrcMode
+    PRINTC      <','>
+    BRA         printM
     
 regMem
+    ; Direction 0 -> register to memory
     BSR         printM  ; Print list of registers
-    
     PRINTC      <','>
     BSR         getSrcReg
-    BSR         getSrcMode
-
-memReg
-    BSR         getSrcReg
-    BSR         getSrcMode
-    PRINTC      <','>
-    BSR         printM
-    RTS
+    BRA         getSrcMode
     
 instrTypeThree
 ; for ADD, SUB, AND
     ; get direction bit
-    isoBitsM    D4,#10,#10
-    MOVE        D0,D1
-    
+    MOVE.L      D4,D1
+    AND.L       #256,D1
+    BNE         dnToEa
+    OR.W       #$19D,(sModeFlag)
+*    setFlagS    #$19D
+    BRA         eaToDn
     ; adjust mode restrictions to account for direction
     ; if dir is 1, src mode can't be Dn
-    ; EOR.W       D0,(sModeFlag)
-    
+dnToEa
+    OR.W       #$19C,(sModeFlag)
+*    setFlagS    #$19C
+eaToDn
     BSR         printOpcodeSize
     PRINTT
     
