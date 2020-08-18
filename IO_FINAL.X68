@@ -9,6 +9,7 @@ START
 *A5 - the console window current line
 *A6 - our current memory location to read for the opcode requester
 WELCOME
+	MOVE.L	#0,A5                  ;reset A5 line counter in case program is being re-run
     MOVE.L  #$FF00,D1              ;clear the screen in case the program is being re-run
     RUNTRAP <#11>
     PRINT   <'               @...@ .(../%  %..*(  %...( .#..*/  #..*.                        '>,ENDL

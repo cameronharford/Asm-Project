@@ -13,7 +13,7 @@
 
 
 ;filename   dc.b 'TEST_MEGA.bin',0
-filename   dc.b 'TEST_MOVEM.bin',0
+filename    dc.w 'TEST_MOVEM.bin',0
 debugStart EQU  $7000
 debugEnd   EQU  $706D
 
