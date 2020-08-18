@@ -43,7 +43,6 @@ isoBitsM        MACRO
     ENDC
     IFNC '\2','D1'
         ; same thing with arg2/D1
-        MOVE.L      D1,-(SP)
         MOVE.B      \2,D1
     ENDC
     IFNC '\3','D2'
@@ -59,6 +58,7 @@ isoBitsM        MACRO
 ;
 ; same as the above example
 ; returns D0 = 0x2
+
 
 
 
