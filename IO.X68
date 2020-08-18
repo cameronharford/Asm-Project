@@ -1,6 +1,7 @@
     ORG $1000
     INCLUDE  "parseInstructionMain.x68" 
     
+    
 ;Death mode    
 ;TEST_MEGA.bin $7000 - $75E8
 
@@ -10,13 +11,10 @@ filename   dc.b 'TEST_MEGA.bin',0
 debugStart EQU  $7000
 debugEnd   EQU  $75E8
 
-
 START
-    
-    ;control debug mode by uncommenting this
+
     ;JMP WELCOME
 
-SUB_DEBUG
     LEA     filename,A1
     RUNTRAP <#13>
     RUNTRAP <#51>
@@ -24,8 +22,8 @@ SUB_DEBUG
     MOVE.L  #debugEnd,D2
     RUNTRAP <#53>
     PRINT   <'Disassembler Debug Mode!'>,ENDL
-    MOVE.L  #$7000,(startAddress)
-    MOVE.L  #$75E8,(endAddress)
+    MOVE.L  #debugStart,(startAddress)
+    MOVE.L  #debugEnd,(endAddress)
     JSR     SUB_printer 
 
 
@@ -37,9 +35,36 @@ SUB_DEBUG
 WELCOME
     MOVE.L  #$FF00,D1              ;clear the screen in case the program is being re-run
     RUNTRAP <#11>
-    PRINT   <'Welcome to the PowerPC is Better 68k Disassembler'>,ENDL
-    PRINT   <'Yum Yum Instructions.'>,ENDL
-
+    PRINT   <'               @...@ .(../%  %..*(  %...( .#..*/  #..*.                        '>,ENDL
+    PRINT   <'               &...*. &...&  @...&  %...@  %...&  @...#                        '>,ENDL
+    PRINT   <'                &...@ .*../*  *...* ./....  *..*.  *..**                       '>,ENDL
+    PRINT   <'              (&***********************.**********************%#               '>,ENDL
+    PRINT   <'            #&%***************@@@@@@@@@@@@@@@@@*****************#              '>,ENDL
+    PRINT   <'           @**@*********&@%%&%&%%%%%&&&&&&&&%&%%&%%%%%&@@/*******&             '>,ENDL
+    PRINT   <'#%..........%/&/*******&@@(((((((((((((((((((((((((((((((&&******%.......#*    '>,ENDL
+    PRINT   <' @&&&&&&&&&&@*(%*******#@@#((((PowerPC is Better((((((((((@***&&(%(.....*&.    '>,ENDL
+    PRINT   <'       ....@*.*@*******/@@&(((((((68k Disassembler((((((((@(**#&**&            '>,ENDL
+    PRINT   <' #@........../%&@@@@@@@@@@@(((((((((((((((((((((((((((((((%@***@**&.......*#   '>,ENDL
+    PRINT   <'   ...      (**/%*******%@@((((((((((((((((((((((((((((((((@***&#*(@%(((((/    '>,ENDL
+    PRINT   <'   .(#%%%%%%@&%*@********@@%((((((Cameron Harford((((((((((@/**/&**%           '>,ENDL
+    PRINT   <'  #&..........(*&/*****%&@@@((((((((Isaac Jones((((((((((((%@@@@@/*@........&  '>,ENDL
+    PRINT   <'             #**(%*****###@@((((((((((Kelly Pratama(((((((((@******((.....     '>,ENDL
+    PRINT   <'    &&&&&&&&&&&@*@*****/&*@@%((((((((((Jerahmy Bindon(((((((@/******@&@@@@@@(  '>,ENDL
+    PRINT   <'   .#..........&/&******@*&@@(((((((((((((((((((((((((((((((%%***(@#&.......*( '>,ENDL
+    PRINT   <'              #**/#*****&((@@#(((((((((((((((((((((((((((((((@@@@@@*&#         '>,ENDL
+    PRINT   <'    @(..........@*@&&&&&&&*@@@@@&@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/*****/@/*.....% '>,ENDL
+    PRINT   <'    (&###%%%%%#%@*&********#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%*******&........%'>,ENDL
+    PRINT   <'               &**/#********@*****************************************/        '>,ENDL
+    PRINT   <'     %(..........&*@&&&&&&&&&/****************************************@.......@'>,ENDL
+    PRINT   <'      ..*......*#**&**************************************************@&((((#%%'>,ENDL
+    PRINT   <'               .%***.@&*********************************************#@         '>,ENDL
+    PRINT   <'                .&*******@@@%**&@@@***%@@@***#@@@***(@@@***&@@@****/@          '>,ENDL
+    PRINT   <'                   .%&&%&/..*##@...&/%@...@*(@...@((@...@*/@...@#(.            '>,ENDL
+    PRINT   <'                         &...% #....* (..... (....* *....# /....#              '>,ENDL
+    PRINT   <'                         .*...& @...(  &...%  &...(  #...%  &...%              '>,ENDL
+    PRINT   <'                          .&&@@  #@@@#  #@@@/  #@@@/  %@@@*  *@@@.             '>,ENDL
+    PRINT   <'                                                                               '>,ENDL
+    
 GET_ADDRESSES
 ;get starting address
     PRINT   <'Enter a valid and even 8-char hexadecimal starting address: '>
@@ -143,15 +168,14 @@ PR_LOOP_TAIL
 *A5 - line counter
 *A6 - address pointer
 SUB_printer
-    MOVE.L  #4,A5                   ;load the number of lines we have printed so far into A5. this means all the intro garbage.
     LEA     startAddress,A6         ;load our starting address into our address pointer. so we can start at the beginning of where the file is loaded
     MOVEA.L (A6),A6
     JMP     P_CONTINUE
 P_CLEARSCREEN
-    LEA     sline_count,A1
-    MOVE.L  (A1),A1
-    ADDA.L  A5,A1
-    MOVE.L  #0,A5
+    LEA     sline_count,A1          
+    MOVE.L  (A1),A1                 
+    ADDA.L  A5,A1                   l
+    MOVE.L  #0,A5                   ;reset our line counter
     MOVE.L  A1,(sline_count)
     PRINT   <'Please press enter to continue.'>
     RUNTRAP <#2>
@@ -162,45 +186,25 @@ P_CONTINUE
     BGT     P_DONE                  ;jump to the ask-to-read-another-file printout and termination
 ;printing an instruction and updating our instruction pointer
     BSR     SUB_printRegister       ;print the value of A6 out to console 
-   
-
-
-
- 
-; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
-; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
-; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
+    
     MOVE.L  (A6),D1
     LSR.L   #8,D1
     LSR.L   #8,D1
     CMP.L   #$1000,D1
-    BGE     printSpace
+    BGE     instrPrinter
     PRINT   <'0'>
     CMP.L   #$100,D1
-    BGE     printSpace
+    BGE     instrPrinter
     PRINT   <'0'>
     CMP.L   #$10,D1
-    BGE     printSpace
+    BGE     instrPrinter
     PRINT   <'0'>
-printSpace 
+instrPrinter
     MOVE.L  #16,D2
     RUNTRAP <#15>
     PRINT <' '>
     
     BSR     parseInstructionMain
-    ;
-    ;
-    ; KILL ME
-    
-    ADD.L   #2,A6
-; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
-; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
-; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain; DELETE EVERYTYHING IN HERE EXCEPT    BSR     parseInstructionMain
-
-
-
-
-
     
 ;reading how full our screen is
     ADD.L   #1,A5                   ;update how many lines we have printed to the screen
@@ -216,7 +220,6 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END START
-
 
 *~Font name~Courier New~
 *~Font size~10~
