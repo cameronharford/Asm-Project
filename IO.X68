@@ -190,17 +190,16 @@ P_CONTINUE
     LSR.L   #8,D1
     CMP.L   #$1000,D1
     BGE     instrPrinter
-    PRINT   <'0'>
+    PRINTC  <'0'>
     CMP.L   #$100,D1
     BGE     instrPrinter
-    PRINT   <'0'>
+    PRINTC  <'0'>
     CMP.L   #$10,D1
     BGE     instrPrinter
-    PRINT   <'0'>
+    PRINTC  <'0'>
 instrPrinter
     MOVE.L  #16,D2
     RUNTRAP <#15>
-*    PRINT   <' '>
     PRINTT
     
     BSR     parseInstructionMain

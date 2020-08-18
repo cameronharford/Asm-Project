@@ -86,7 +86,7 @@ code0100
     ; because NOP and RTS are constant, check for them first
     CMP.W       #$4E71,D4
     BEQ         sub_nop
-    CMP.W       #$4E74,D4
+    CMP.W       #$4E75,D4
     BEQ         sub_rts
     
     ; JSR has 6 constant bits so it's easy to check
@@ -370,6 +370,7 @@ printShiftDirection
 shiftR
     PRINTC      <'R'>
     RTS
+
 
 
 

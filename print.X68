@@ -60,7 +60,37 @@ PRINTT   MACRO
     PRINTC  <9>
     ENDM
 
+hexPrinter
+    MOVE.L  D6,D1
+    CLR     D2
+hexShiftLoop
+    ADD.L   #1,D2
+    CMP.B   D3,D2
+    BEQ     hexNum          ;move on when we've shifted enough
+    LSR.L   #4,D1           ;shift the char we want down to the lowest nibble position
+    JMP     hexShiftLoop
+hexNum 
+    AND.L   #$F,D1          ;extract lowest nibble
+    CMP.B   #9,D1           ;find out if its 0-9 or a-f
+    BGT     hexLetter
+    ADD.B   #'0',D1         ;convert to ascii
+    MOVE.B  #6,D0
+    TRAP    #15             ;print the char
+    JMP     hexTail
+hexLetter    
+    ADD.B   #55,D1    ;'A' - 10
+    MOVE.B  #6,D0
+    TRAP    #15
+hexTail
+    SUB.B   #1,D3
+    BNE     hexPrinter
+    RTS
 
+PRINTH  MACRO
+    MOVE.L  \1,D6           ;value to print
+    MOVE.L  \2,D3           ;amount of chars to print
+    BSR     hexPrinter
+    ENDM
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

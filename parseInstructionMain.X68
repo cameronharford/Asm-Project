@@ -214,11 +214,10 @@ shiftDest
 instrTypeSix
 ; for DIVU/MULS
     PRINTT
-    PRINTT
     ;check source mode
     BSR         getSrcReg
     BSR         getSrcMode
-    ;print source arg
+    PRINTC      <','>
     
     ;print dest data register
     BSR         getDestReg
@@ -227,7 +226,6 @@ instrTypeSix
 
 instrTypeSeven
 ; for LEA
-    PRINTT
     PRINTT
     ;check source mode
     BSR         getSrcReg
@@ -250,7 +248,6 @@ instrTypeEight
 
 instrTypeNine
 ; for JSR
-    PRINTT
     PRINTT
     BSR         getSrcReg
     BSR         getSrcMode

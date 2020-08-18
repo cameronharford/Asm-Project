@@ -11,7 +11,15 @@ START:
     ; D0 should have the 16 bit opcode (may change this later)
     PRINT   <'Start of test'>,ENDL
     
-    PRINT   <'Tab test:'>
+    PRINTH  #$12AB,#4
+    PRINTH  #$82DA,#4
+    PRINTH  #$34,#2
+    
+    
+    
+    
+    
+    PRINT   <' Tab test:'>
     PRINTT
     PRINTT
     PRINTC  <'0'>
@@ -99,6 +107,8 @@ BRANCHBYTES DC.W    $6000,$003E
             DC.W    $FFFF
             
     END    START        ; last line of source
+
+
 
 
 

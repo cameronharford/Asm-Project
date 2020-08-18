@@ -245,9 +245,10 @@ invalidSize
 * bad argument = "[invalid arg]"
 
 invalidOpcode	
-	PRINT       <'Error: Invalid opcode! '>,ENDL
-*	PRINT       <'(this instruction is not supported)'>,ENDL
-
+	PRINT       <'DATA    #$'>
+	PRINTH      D4,#4
+	PRINT       <''>,ENDL
+	
     ; to avoid memory leaks with the stack, I need to reset
 	; its ptr to what it was when findOpcodeMain was called
 	MOVEA       A2,SP
