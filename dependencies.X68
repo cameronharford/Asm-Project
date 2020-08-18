@@ -10,6 +10,7 @@
 *    and the printer not accounting for this
 * random function calls
 *   -caused by mistakes in a jump table structure
+*   -may also be caused by my optimized conditional branches
 
 * Register usage key:
 *   D0 = randomly used; can be freely modified
@@ -59,8 +60,6 @@
 asciiToHexBuffer        DC.B    0,0,0,0,0,0,0,0,0
 startAddress            DC.L    0
 endAddress              DC.L    0
-sline_address           DC.L    0
-sline_count             DC.L    0
 
 
 readFromFile
@@ -70,21 +69,22 @@ readFromFile
     RTS
     
 
-S_MODE_FLAGS            DS.W    1
-D_MODE_FLAGS            DS.W    1
+sModeFlag       DC.W    0
+dModeFlag       DC.W    0
 
 setFlagS        MACRO
-    MOVE.L      \1,(S_M0DE_FLAGS)
+    MOVE.L      \1,(sModeFlag)
     ENDM
 setFlagD        MACRO
-    MOVE.L      \1,(D_M0DE_FLAGS)
+    MOVE.L      \1,(dModeFlag)
     ENDM
 loadFlagAddrS   MACRO
-    MOVE.L      S_MODE_FLAGS,D2
+    MOVE.L      sModeFlag,A0
     ENDM
 loadFlagAddrD   MACRO
-    MOVE.L      D_MODE_FLAGS,D2
+    MOVE.L      dModeFlag,A0
     ENDM
+    
 **************************************************************
 * FLAG Documentation:                                        *
 * -When we identify an instruction name, such as MOVE, a     *
@@ -159,8 +159,8 @@ loadFlagAddrD   MACRO
 checkMode
 ; D3 contains the mode we must check
 ; D5 contains the arg value (Xn)
-; D2 contains the address of either S_MODE_FLAGS or D_MOVE_FLAGS
-    CMP.W       #0,(D2)
+; A0 contains the address of either S_MODE_FLAGS or D_MOVE_FLAGS
+    CMP.W       #0,(A0)
     ; if the flag is 0, the instruction doesn't use the arg
     ; note: this indicates whether an instruction that CAN use an arg doesn't do so;
     ; we aren't checking instructions that never have an arg type
@@ -177,7 +177,7 @@ checkMode_1
     ; ie: 7-11
 checkMode_2
 ;``` I forget if args should be D3 and D3 rather than D3 and D3 - 1
-    isoBitsM    (D2),D3,D3
+    isoBitsM    (A0),D3,D3
     CMP         #0,D0
     BEQ         badArg
     RTS
@@ -264,8 +264,8 @@ skipArgPrint
     ; add
     ; todo: check if 4 or 2 length for BSR printArg
     ;```
-    ADD         4,(SP)
-    RTS
+*    ADD         4,(SP)
+*    RTS
     
     
 
@@ -298,6 +298,19 @@ IMMCMP      MACRO
             \3  \4
         ENDC
         ENDM
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

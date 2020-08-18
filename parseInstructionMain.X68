@@ -106,7 +106,7 @@ instrTypeThree
     
     ; adjust mode restrictions to account for direction
     ; if dir is 1, src mode can't be Dn
-    EOR.W       D0,(S_MODE_FLAGS)
+    EOR.W       D0,(sModeFlag)
     
     BSR         printOpcodeSize
     
@@ -394,6 +394,7 @@ A_TAIL
     BLT         A_LOOP
     
     RTS
+
 
 
 

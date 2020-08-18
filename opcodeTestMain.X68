@@ -5,7 +5,7 @@
 * Description:
 *-----------------------------------------------------------
     ORG    $1000
-DEPENDENCY  SET 0
+
     INCLUDE     "parseInstructionMain.X68"
 START:
     ; D0 should have the 16 bit opcode (may change this later)
@@ -71,6 +71,7 @@ ADDBYTES    DC.W    $D202 ; ADD.B
 *            DC.W    $ ; 
             DC.W    $FFFF ; END
     END    START        ; last line of source
+
 
 
 

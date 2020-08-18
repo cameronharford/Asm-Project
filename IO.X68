@@ -203,7 +203,6 @@ instrPrinter
     BSR     parseInstructionMain
     
 ;reading how full our screen is
-    ADD.L   #1,A5                   ;update how many lines we have printed to the screen
     CMP.L   #31,A5                  ;if our screen is full we need to ask the user to press ender
     BEQ     P_CLEARSCREEN
     JMP     P_CONTINUE              ;otherwise just continue reading
@@ -216,3 +215,8 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END START
+
+*~Font name~Courier New~
+*~Font size~10~
+*~Tab type~1~
+*~Tab size~4~

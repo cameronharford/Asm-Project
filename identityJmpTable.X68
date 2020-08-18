@@ -1,5 +1,5 @@
     INCLUDE		"dependencies.X68"
-
+    
 ; jump table for bits 15-12 of an instruction opcode
 ; NOPs are used for padding because jumps to invalidOpcode
 ; only have a word extension rather than a long
@@ -154,8 +154,6 @@ sub_lea
 	MOVEQ       #7,D5
 	setFlagS    #$184
     RTS
-
-
 
 
 ************************************************************
@@ -369,6 +367,10 @@ printShiftDirection
 shiftR
     PRINTC      <'R'>
     RTS
+
+
+
+
 
 *~Font name~Courier New~
 *~Font size~10~
