@@ -79,10 +79,15 @@ instrTypeOne
     BSR         printOpcodeSize
     
     ; check source mode
+    BSR         getSrcReg
+    BSR         getSrcMode
     ; print source arg (or invalid arg)
     ; comma
+    PRINTC  <','>
     
     ; check dest mode
+    BSR         getDestReg
+    BSR         getDestMode
     ; print dest arg
     RTS
 
@@ -91,10 +96,24 @@ instrTypeTwo
     ; print size first
     ; size is determined by bit 6
     ; it's either 0 (W) or 1 (L)
+    BSR         printOpcodeSize
+    
     
     ; get direction bit to determine the print order
     isoBitsM    D4,#10,#10
+    CMP.B       #0,D0   
+    BEQ         regMem  ; Direction 0 -> register to memory
+    BNE         memReg  ; Direction 1 -> memory to register
     
+regMem
+    BSR         printM  ; Print list of registers
+    
+    PRINTC      <','>
+    BSR         getSrcReg
+    BSR         getSrcMode
+
+memReg
+        
     
     RTS
     
@@ -117,20 +136,34 @@ instrTypeThree
     BEQ         destToSrc
     
     ; TODO: print source then dest args
+    BSR         getSrcReg
+    BSR         getSrcMode
+    
+    PRINTC      <','>
+    
+    BSR         getDestReg
+    BSR         getDestMode
     
     RTS
 destToSrc
     ; TODO:
     ; print dest arg
-
+    BSR         getDestReg
+    BSR         getDestMode
     ; check source mode
     ; print source arg (or invalid arg)    
+    PRINTC      <','>
+    
+    BSR         getSrcReg
+    BSR         getSrcMode
     RTS
 
 
 instrTypeFour
-; for LSd/ASd (type 1)
+; for LSd/ASd (type 1, single arg)
     ; type 1 doesn't have a size, so no need to print it
+    BSR         getSrcReg
+    BSR         getSrcMode
     
     RTS
 
@@ -139,45 +172,77 @@ instrTypeFive
     BSR         printOpcodeSize
     ; type 2 uses an immediate between 1-8
     ; since it uses only 3 bits for the value, %000 = 8
+    isoBitsM    D4,#5,#5
+    CMPI.B      #0,D0
+    BEQ         immShift    ; Shift amount is in instruction
+    BNE         regShift    ; Shift amount is in data register, stored in instruction
     
-    ; type 2 doesn't have a mode for src or dest, so we don't check
-    ; TODO: print dest, then src arg (Dn)
+immShift
+    PRINTC      <'#'>
+    MOVE.B      D0,D1
+    ADDI.B      #$30,D1     ; Convert to ASCII equivalent
+    
+    MOVE.B      #6,D0       ; Print shift amount
+    TRAP        #15
+    BRA         shiftDest
+    
+regShift
+    BSR         getDestReg  ; Isolate register value
+    BSR         printRegD   ; Print register
+    
+shiftDest
+    PRINTC      <','>
+    BSR         getSrcReg   ; Isolate register being shifted
+    BSR         printRegD   ; Print register
+    
     RTS
 
 instrTypeSix
 ; for DIVU/MULS
     ;check source mode
+    BSR         getSrcReg
+    BSR         getSrcMode
     ;print source arg
     
     ;print dest data register
+    BSR         getDestReg
+    BSR         printRegD
     RTS
 
 instrTypeSeven
 ; for LEA
     ;check source mode
+    BSR         getSrcReg
+    BSR         getSrcMode
     ;print source arg
     
     ; print dest address register
+    BSR         getDestReg
+    BSR         printRegA
     RTS
 
 instrTypeEight
 ; for NOT
     BSR         printOpcodeSize
     ;check source mode
-    
+    BSR         getSrcReg
+    BSR         getSrcMode
     ;print source arg
     RTS
 
 instrTypeNine
 ; for JSR
     ; check source mode
+    BSR         getSrcReg
+    BSR         getSrcMode
     ; print source arg
     RTS
     
 instrTypeTen
 ; for branching (BRA/BEQ/BGT/BLE)
 ; TODO: add sanity check for displacement addr
-
+    BSR         printDisp
+    
     RTS
 
 getSrcMode
@@ -253,10 +318,22 @@ modeJmpTable111
     JMP         badArg
     
 printRegD
+    PRINTC      <'D'>
+    MOVE.B      D3,D1
+    ADDI.B      #$30,D1     ; Convert to ASCII equivalent
+    
+    MOVE.B      #6,D0       ; Print register number
+    TRAP        #15
+    RTS
     
 printRegA
     PRINTC      <'A'>
+    MOVE.B      D3,D1
+    ADDI.B      #$30,D1     ; Convert to ASCII equivalent
     
+    MOVE.B      #6,D0       ; Print register number
+    TRAP        #15
+    RTS
 
 printAddress
 ; TODO
@@ -353,50 +430,120 @@ REG_TAIL
 
 *   Parse the bitmask for a MOVEM instruction, and print the list of registers being moved
 *   D1 - Bitmask
-*   D3 - Loop counter
+*   D4 - Loop counter (current register number)
 *   D2 - Bit storage
+*   D0 - Sequential register start (0-7)
 printM
     BSR         readFromFile
     MOVE.W      D3,D1
     CLR         D3
+    MOVE.W      #$0F,D0
+    CMPI.B      #0,D1   ; If lower byte of mask is 0, no data registers are moved
+    BEQ         A_INIT
+    
+    
 D_LOOP
     MOVE.W      D1,D2   ; Copy mask
-    LSR.W       D3,D2   ; Shift to the first non-processed bit
+    LSR.W       D4,D2   ; Shift to the first non-processed bit
     ANDI.W      #1,D2   ; Isolate bit we care about
     CMPI.W      #1,D2   ; If bit=1, that register is moved
-    BNE         D_TAIL  ; If bit=0, move to next bit in mask
+    BNE         D_END   ; If bit=0, either series ended or hasn't started
     
-    JMP         printRegD   ; Bit=1, print register
+    CMPI.W      #$F,D0  ; Register doesn't have a start, store current
+    BEQ         D_START
+    BRA         D_TAIL
+    
+D_START 
+    MOVE.B      D4,D0   ; Store loop counter as start of series
+    BRA         D_TAIL
+    
+D_END
+    MOVE.B      D4,D5
+    SUBI.B      #1,D5   ; Get final successful register check
+    CMPI.W      D5,D0   ; If current register > start register, series ended and print both
+    BGT         D_PRINT_MULT
+    BEQ         D_PRINT ; Current register = start register, only a single register was moved
+    BRA         D_TAIL  ; Otherwise, series hasn't started yet so ignore
+
+D_PRINT
+    MOVE.B      D0,D3
+    BSR         printRegD
     PRINTC      <' '>
+    BRA         D_TAIL
+
+D_PRINT_MULT
+    MOVE.B      D0,D3
+    BSR         printRegD
+    PRINTC      <'-'>
     
+    MOVE.B      D5,D3       
+    BSR         printRegD
+    MOVE.W      #$0F,D0 ; Reset series start (can have multiple short series)
+
 D_TAIL
-    ADDI.W      #1,D3
-    CMPI.W      #8,D3   
+    ADDI.W      #1,D4
+    CMPI.W      #8,D4   
     BLT         D_LOOP  ; Gone through bits representing Dn, move to An
     
-    PRINTC      <'/'>
-    
-    CLR         D3
+    CLR         D4
     LSR.W       #8,D1   ; Shift mask to access address bits
+    CMPI.B      #0,D1   ; If new lower byte of mask is 0, no address registers are moved
+    BEQ         moveMDone  
+    PRINTC      <'/'>
+A_INIT
+    MOVE.W      #$0F,D0
 A_LOOP
     MOVE.W      D1,D2   ; Copy mask
-    LSR.W       D3,D2   ; Shift mask to new bit
-    ANDI.W      #1,D2   ; Isolate first bit
-    CMPI.W      #1,D2   ; If bit=1, register was moved
-    BNE         A_TAIL  ; Bit=0, move to next bit
+    LSR.W       D4,D2   ; Shift to the first non-processed bit
+    ANDI.W      #1,D2   ; Isolate bit we care about
+    CMPI.W      #1,D2   ; If bit=1, that register is moved
+    BNE         A_END   ; If bit=0, either series ended or hasn't started
     
-    JMP         printRegA
+    CMPI.W      #$F,D0  ; Register doesn't have a start, store current
+    BEQ         A_START
+    BRA         A_TAIL
+
+A_START 
+    MOVE.B      D4,D0   ; Store loop counter as start of series
+    BRA         A_TAIL
+    
+A_END
+    MOVE.B      D4,D5
+    SUBI.B      #1,D5   ; Get final successful register check
+    CMPI.W      D5,D0   ; If current register > start register, series ended and print both
+    BGT         A_PRINT_MULT
+    BEQ         A_PRINT ; Current register = start register, only a single register was moved
+    BRA         A_TAIL  ; Otherwise, series hasn't started yet so ignore
+
+A_PRINT
+    MOVE.B      D0,D3
+    BSR         printRegA
     PRINTC      <' '>
+    BRA         A_TAIL
+
+A_PRINT_MULT
+    MOVE.B      D0,D3
+    BSR         printRegA
+    PRINTC      <'-'>
+    
+    MOVE.B      D5,D3       
+    BSR         printRegA
+    MOVE.W      #$0F,D0 ; Reset series start (can have multiple short series)
     
 A_TAIL
-    ADDI.W      #1,D3   ; Increment loop count
-    CMPI.W      #8,D3   ; Check if done
+    ADDI.W      #1,D4   ; Increment loop count
+    CMPI.W      #8,D4   ; Check if done
     BLT         A_LOOP
     
+moveMDone
     RTS
 
-
-
+*   Print the address destination for a branch/jump instruction
+printDisp
+    BSR     calcDispAddr
+    MOVE.L  A1,D3
+    JMP     printReg
+    RTS
 
 
 
