@@ -124,7 +124,7 @@ code0100
 
 ; Instruction-specific subroutines
 sub_not
-    PRINT       <'NOT'>,ENDL
+    PRINT       <'NOT'>
 	MOVEQ       #8,D5
     setFlagS    #$19D
     RTS
@@ -368,6 +368,7 @@ printShiftDirection
 shiftR
     PRINTC      <'R'>
     RTS
+
 
 
 

@@ -17,21 +17,7 @@ parseInstructionMain:
     MOVE.L      D5,D0
     SUB         #1,D0
     BSR         calcJmpOffset
-    
-    ; TODO: move this logic to each of the instruction type subs
-*    ; print instr size
-*    
-*    ; print source arg
-*    BSR         getSrcReg
-*    BSR         getSrcMode
-*    
-*    ; comma separating args
-*    PRINTC      <','>
-*    
-*    ; print dest arg
-*    BSR         getDestReg
-*    BSR         getDestMode
-    
+        
     ; endl
     PRINT       <''>,ENDL
     
@@ -177,6 +163,7 @@ instrTypeFour
 ; for LSd/ASd (type 1, single arg)
     PRINTT
     ; type 1 doesn't have a size, so no need to print it
+    ; TODO:
     setFlagS    #$FFFF
     BSR         getSrcReg
     BSR         getSrcMode
@@ -402,10 +389,12 @@ printAbsLong
     
     BSR         readFromFile
     ; Print Address
-    BSR         printReg
+    PRINTH      D3,#4
+*    BSR         printReg
     BSR         readFromFile
     ; Print Address
-    BRA         printReg ;```
+*    BRA         printReg ;```
+    PRINTH      D3,#4
     
 printImmediate
 *    PRINT   <'immediate'>
@@ -421,7 +410,8 @@ printImmediate
     
     BSR         readFromFile   
     ; Print value
-    BSR         printReg    
+    PRINTH      D3,#4
+*    BSR         printReg    
 DONE
     RTS
 
@@ -459,24 +449,52 @@ REG_TAIL
     BNE         LOOP
     RTS
 
-REGLIST     DC.W    0
+reverseBits
+    ; we want the result in D3, so save D3 to D1
+    MOVE.W      D3,D1
+    CLR.L       D3
+    MOVE.B      #16,D0
+reverseBitsLoop
+    ; end loop if WORD result of the shift is 0
+    LSL.W       #1,D3
+    MOVE.W      D1,D2
+    AND.W       #1,D2
+    OR.W        D2,D3    
+    ; end loop if WORD result of the shift is 0
+    LSR.W       #1,D1
+    SUB         #1,D0
+    BNE         reverseBitsLoop
+    RTS
+;idea:
+; to make this modular (able to handle postinc & predec without redundant code):
+; we set a reg to hold a value we iterate by (1 or -1)
+; we set a reg to hold a starting bit ptr value (0 or 15)
+; we set a reg to hold end bit ptr value (15 or 0)
+; better yet, make the method process the list one way
+;   then if the list goes in reverse order, reverse the bits
 
+; TODO: print the forward slash in front of every enabled register except the first
+; TODO: use two loops of 8, and use a Dn to store a charToPrint (either 'D' or 'A')
 printRegList
     ; load the register list
-    BSR         readFromFile
-    MOVE.W      D3,(REGLIST)
-    
+    BSR         readFromFile    
     ; check direction bit so we know the list format
+    ; 1 is ea to regList (postinc, so reversed list bit order)
+    ; 0 is regList to ea (predec)
     MOVE.L      D4,D1
-    AND.L       #256,D1 
-    
+    AND.L       #256,D1
+    BEQ         printRegList_1
+    BSR         reverseBits
+printRegList_1
     ; load counter
-*    MOVE.B      #$16
+    *MOVE.B      #$16
+    ; set the foundReg bool to 0 (we use D1 for this)
+    CLR.L       D1
 regListLoop
     CMP.W       #0,D1
     BEQ         postIncList
 preDecList
-
+    
 
     BRA         regListLoopTail
 postIncList
@@ -492,107 +510,6 @@ regListLoopTail
 printM
     PRINT       <'[Reg list]'>
     RTS
-    BSR         readFromFile
-    MOVE.W      D3,D1
-    CLR         D3
-    MOVE.W      #$0F,D0
-    CMPI.B      #0,D1   ; If lower byte of mask is 0, no data registers are moved
-    BEQ         A_INIT
-    
-    
-D_LOOP
-    MOVE.W      D1,D2   ; Copy mask
-    LSR.W       D4,D2   ; Shift to the first non-processed bit
-    ANDI.W      #1,D2   ; Isolate bit we care about
-    CMPI.W      #1,D2   ; If bit=1, that register is moved
-    BNE         D_END   ; If bit=0, either series ended or hasn't started
-    
-    CMPI.W      #$F,D0  ; Register doesn't have a start, store current
-    BEQ         D_START
-    BRA         D_TAIL
-    
-D_START 
-    MOVE.B      D4,D0   ; Store loop counter as start of series
-    BRA         D_TAIL
-    
-D_END
-    MOVE.B      D4,D5
-    SUBI.B      #1,D5   ; Get final successful register check
-    CMP.W       D5,D0   ; If current register > start register, series ended and print both
-    BGT         D_PRINT_MULT
-    BEQ         D_PRINT ; Current register = start register, only a single register was moved
-    BRA         D_TAIL  ; Otherwise, series hasn't started yet so ignore
-
-D_PRINT
-    MOVE.B      D0,D3
-    BSR         printRegD
-    BRA         D_TAIL
-
-D_PRINT_MULT
-    MOVE.B      D0,D3
-    BSR         printRegD
-    PRINTC      <'-'>
-    
-    MOVE.B      D5,D3       
-    BSR         printRegD
-    MOVE.W      #$0F,D0 ; Reset series start (can have multiple short series)
-
-D_TAIL
-    ADDI.W      #1,D4
-    CMPI.W      #8,D4   
-    BLT         D_LOOP  ; Gone through bits representing Dn, move to An
-    
-    CLR         D4
-    LSR.W       #8,D1   ; Shift mask to access address bits
-    CMPI.B      #0,D1   ; If new lower byte of mask is 0, no address registers are moved
-    BEQ         moveMDone  
-    PRINTC      <'/'>
-A_INIT
-    MOVE.W      #$0F,D0
-A_LOOP
-    MOVE.W      D1,D2   ; Copy mask
-    LSR.W       D4,D2   ; Shift to the first non-processed bit
-    ANDI.W      #1,D2   ; Isolate bit we care about
-    CMPI.W      #1,D2   ; If bit=1, that register is moved
-    BNE         A_END   ; If bit=0, either series ended or hasn't started
-    
-    CMPI.W      #$F,D0  ; Register doesn't have a start, store current
-    BEQ         A_START
-    BRA         A_TAIL
-
-A_START 
-    MOVE.B      D4,D0   ; Store loop counter as start of series
-    BRA         A_TAIL
-    
-A_END
-    MOVE.B      D4,D5
-    SUBI.B      #1,D5   ; Get final successful register check
-    CMP.W       D5,D0   ; If current register > start register, series ended and print both
-    BGT         A_PRINT_MULT
-    BEQ         A_PRINT ; Current register = start register, only a single register was moved
-    BRA         A_TAIL  ; Otherwise, series hasn't started yet so ignore
-
-A_PRINT
-    MOVE.B      D0,D3
-    BSR         printRegA
-    BRA         A_TAIL
-
-A_PRINT_MULT
-    MOVE.B      D0,D3
-    BSR         printRegA
-    PRINTC      <'-'>
-    
-    MOVE.B      D5,D3       
-    BSR         printRegA
-    MOVE.W      #$0F,D0 ; Reset series start (can have multiple short series)
-    
-A_TAIL
-    ADDI.W      #1,D4   ; Increment loop count
-    CMPI.W      #8,D4   ; Check if done
-    BLT         A_LOOP
-    
-moveMDone
-    RTS
 
 *   Print the address destination for a branch/jump instruction
 printDisp
@@ -600,6 +517,7 @@ printDisp
     MOVE.L  A1,D3
     JMP     printReg
     RTS
+
 
 
 

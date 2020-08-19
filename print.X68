@@ -60,6 +60,7 @@ PRINTT   MACRO
     PRINTC  <9>
     ENDM
 
+
 hexPrinter
     MOVE.L  D6,D1
     CLR     D2
@@ -91,6 +92,7 @@ PRINTH  MACRO
     MOVE.L  \2,D3           ;amount of chars to print
     BSR     hexPrinter
     ENDM
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
