@@ -78,12 +78,6 @@ setFlagS        MACRO
 setFlagD        MACRO
     MOVE.W      \1,(dModeFlag)
     ENDM
-loadFlagAddrS   MACRO
-    MOVE.L      sModeFlag,A0
-    ENDM
-loadFlagAddrD   MACRO
-    MOVE.L      dModeFlag,A0
-    ENDM
     
 **************************************************************
 * FLAG Documentation:                                        *
@@ -183,12 +177,6 @@ checkMode_1
     ; the flag variable has these cases following consecutively after mode
     ; ie: 7-11
 checkMode_2
-;``` I forget if args should be D3 and D3 rather than D3 and D3 - 1
-*    isoBitsM    (A0),D5,D5
-*    CMP         #0,D0
-*    BEQ         badArg
-*    RTS
-    ; if the macro doesn't work:
     MOVE.W      #1,D2
 *    MOVE.W      (A1),D2
     LSL.W       D5,D2
@@ -201,14 +189,19 @@ checkMode_2
 **         instruction reference pointers/offsets         **
 ************************************************************
 getOpcodeSize
-; TODO: check for 11, which is invalid in most cases
 ; for some opcodes, like ASd, it's legal
     ; returns bits 7-6 of an opcode, which is usually size
     ; possible returns: 00 - .B
     ;                   01 - .W
     ;                   10 - .L
     ;                   11 - special case
+    MOVE.W      D4,D0
+    ANDI.W      #$C000,D0
+    BEQ         getMoveSize
     isoBitsM    D4,#7,#6
+    RTS
+getMoveSize
+    isoBitsM    D4,#13,#12
     RTS
 
 printOpcodeSize
@@ -269,10 +262,8 @@ skipArgPrint
     ADD         #4,SP
     RTS
     
-    
 
-
-; TODO: documentation
+; Macro for conveniently running a Text I/O Trap 15 function
 RUNTRAP     MACRO
     IFNE NARG-1                       ;if not 1 arguments
         IFNE NARG-2
@@ -284,6 +275,7 @@ RUNTRAP     MACRO
     MOVE.B  \1,D0
     TRAP    #15
     ENDM
+
 
 
 

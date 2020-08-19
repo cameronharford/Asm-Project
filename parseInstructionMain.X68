@@ -305,8 +305,6 @@ modeJmpTable
         
     
 modeJmpTableExtra
-; do all of these modes require an extension?
-; these cases do: 0,1,100
     JMP         printAbsShort ; Abs Short
     
     JMP         printAbsLong ; Abs Long
@@ -339,15 +337,10 @@ modeJmpTableExtra
     
 printRegD
     PRINTC      <'D'>
-    MOVE.B      D3,D1
-    ADDI.B      #$30,D1     ; Convert to ASCII equivalent
-    
-    MOVE.B      #6,D0       ; Print register number
-    TRAP        #15
-    RTS
-    
+    BRA         printReg
 printRegA
     PRINTC      <'A'>
+printReg
     MOVE.B      D3,D1
     ADDI.B      #$30,D1     ; Convert to ASCII equivalent
     
@@ -356,98 +349,53 @@ printRegA
     RTS
 
 printAddress
-; TODO
-*    PRINT   <'addr'>
     PRINTC      <'('>
     BSR         printRegA
     PRINTC      <')'>
     RTS
    
 printAddrPostInc
-; TODO
-*    PRINT   <'addr w/ postinc'>
     BSR         printAddress
     PRINTC      <'+'>
     RTS
 
 printAddrPreDec
-; TODO
-*    PRINT   <'addr w/ predec'>
     PRINTC      <'-'>
     BSR         printAddress  
     RTS
 
 printAbsShort
-*    PRINT   <'absolute short'>
     PRINTC      <'$'>
     BSR         readFromFile
     BRA         printReg
     
 printAbsLong
-*    PRINT   <'absolute long'>
     PRINTC      <'$'>
-    
     BSR         readFromFile
     ; Print Address
     PRINTH      D3,#4
-*    BSR         printReg
     BSR         readFromFile
     ; Print Address
-*    BRA         printReg ;```
     PRINTH      D3,#4
+    RTS
     
 printImmediate
-*    PRINT   <'immediate'>
     PRINT       <'#$'>
     
-    BSR         getOpcodeSize   ; Puts binary for instruction size in D0 (00 for byte, 01 for word, 10 for long)
     BSR         readFromFile    
     ; Print value
-    BSR         printReg
+    PRINTH      D3,#4
     
+    BSR         getOpcodeSize   ; Puts binary for instruction size in D0 (00 for byte, 01 for word, 10 for long)
     CMP.B       #$2,D0          ; If size bits indicate long, read another word from memory
     BNE         DONE
     
     BSR         readFromFile   
     ; Print value
-    PRINTH      D3,#4
-*    BSR         printReg    
+    PRINTH      D3,#4    
 DONE
     RTS
 
-*   Prints the contents of a register in hex (Slightly modified from function in IO)
-*   For comments on what each line does, see IO's function
-*   D3 - Register being printed
-*   D5 - Loop index
-*   D2 - shift loop index
-*   D1 - Char storage
-
-printReg
-    MOVE.L      #4,D5
-LOOP
-    MOVE.L      D3,D1
-    CLR         D2
-SHIFTLOOP
-    ADD.L       #1,D2
-    CMP.B       D5,D2
-    BEQ         NUM
-    LSR.L       #4,D1
-    JMP         SHIFTLOOP
-NUM
-    AND.L       #$F,D1
-    CMP.B       #9,D1
-    BGT         LETTER
-    ADD.B       #'0',D1
-    RUNTRAP     <#6>
-    JMP         REG_TAIL
-LETTER
-    ADD.B       #55,D1
-    RUNTRAP     <#6>
-REG_TAIL
-    SUB.B       #1,D5
-    CMP.B       #0,D5
-    BNE         LOOP
-    RTS
 
 reverseBits
     ; we want the result in D3, so save D3 to D1
@@ -513,9 +461,9 @@ printM
 
 *   Print the address destination for a branch/jump instruction
 printDisp
-    BSR     calcDispAddr
-    MOVE.L  A1,D3
-    JMP     printReg
+    BSR         calcDispAddr
+    MOVE.L      A1,D3
+    JMP         printReg
     RTS
 
 
