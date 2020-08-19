@@ -166,7 +166,7 @@ P_CONTINUE
     BEQ     P_CLEARSCREEN
     JMP     P_CONTINUE              ;otherwise just continue reading
 P_DONE
-    PRINT   <'Press y to restart program.'>,ENDL
+    PRINT   <'Press y to disassemble another memory image.'>,ENDL
     PRINT   <'Press any other key to exit.'>,ENDL
     RUNTRAP <#5>
     CMP.B   #'y',D1
