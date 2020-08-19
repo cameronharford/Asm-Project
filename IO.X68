@@ -13,7 +13,8 @@
 
 
 ;filename   dc.b 'TEST_MEGA.bin',0
-filename    dc.w 'TEST_FINAL.bin',0
+;filename    dc.w 'TEST_FINAL.bin',0
+filename    dc.w 'TEST_BRANCH.bin',0
 debugStart EQU  $7000
 debugEnd   EQU  $7206
 
@@ -222,6 +223,7 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END     START
+
 
 
 

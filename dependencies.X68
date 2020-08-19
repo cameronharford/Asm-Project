@@ -1,8 +1,7 @@
 	    INCLUDE     "print.X68"
         INCLUDE		"isolateBits.X68"
 	    INCLUDE		"calcJmpOffset.X68"
-	    INCLUDE     "calcDisplacement.X68"
-
+	    
 ; I've marked possible error locations with "```"
 * misc possible errors:
 * printing out address of instruction + 2 by accident
@@ -258,6 +257,7 @@ RUNTRAP     MACRO
     MOVE.B  \1,D0
     TRAP    #15
     ENDM
+
 
 
 

@@ -10,21 +10,22 @@ calcDispAddr
     ; two's complement of 0xFF is 0x01
     ; In either case, the actual displacement is in the extension
     ; This check covers both extension cases
-    MOVE.L  #$8,D2
+    MOVE.L  #$2,D2
     
     CMP.B   #1,D0
     BHI     calcDispAddr_end
     BNE     calcDispAddr_w_ext
     ; if we got here, we have a long extension
     BSR     readFromFile
-    ADDI.W  #8,D2
+    ADDI.W  #2,D2
     ; shift left 16 bits
     SWAP    D3
 calcDispAddr_w_ext
     BSR     readFromFile
-    ADDI.W  #8,D2
+    ADDI.W  #2,D2
 calcDispAddr_end
 ; TODO: finish
+    EXT.L   D3
     MOVEA.L A6,A1       ; Copy address pointer
     SUBA.L  D2,A1       ; Shift backward by the extension amount we read
     
@@ -32,6 +33,7 @@ calcDispAddr_end
     
     ADDA.L  D3,A1       ; Add displacement amount to address
     RTS    
+
 
 
 

@@ -444,7 +444,7 @@ printRegList_1
 regListLoop
     MOVE.W      D3,D2
     AND.W       #1,D2
-    BNE         regIsUsed
+    BEQ         regIsUsed
     CMP.B       #0,D1
     BEQ         regIsUsed
     ; print a forward slash if we need to
@@ -519,8 +519,45 @@ printDisp
     JMP         printReg
     RTS
 
-
-
+; calculates displacement from branch instruction opcodes (hex)
+calcDispAddr
+	; D4 holds 16-bit opcode
+	; we only need the 8 LSB's for displacement
+    MOVE.B  D4,D0
+    NEG.B   D0
+    ANDI.L  #$FF,D0             ; clear just in case
+    ; If D0 is 0 here, that means the branch uses a word extension
+    ; If it's 1, it uses a long extension
+    ; two's complement of 0xFF is 0x01
+    ; In either case, the actual displacement is in the extension
+    ; This check covers both extension cases
+    MOVE.L  #$2,D2
+    
+    CMP.B   #1,D0
+    BHI     calcDispAddr_1
+    BNE     calcDispAddr_w_ext
+    ; if we got here, we have a long extension
+    BSR     readFromFile
+    ADDI.W  #2,D2
+    ; shift left 16 bits
+    SWAP    D3
+calcDispAddr_w_ext
+    BSR     readFromFile
+    ADDI.W  #2,D2
+    BRA     calcDispAddr_2 
+calcDispAddr_1
+; TODO: finish
+    NEG     D0
+    EXT.W   D0
+    ADD.W   D0,D3
+calcDispAddr_2    
+    MOVEA.L A6,A1       ; Copy address pointer
+    SUBA.L  D2,A1       ; Shift backward by the extension amount we read
+    
+    ADDA.W  #$2,A1      ; Increment address by 2 bytes to account for PC
+    
+    ADDA.W  D3,A1       ; Add displacement amount to address
+    RTS  
 
 
 
