@@ -399,6 +399,8 @@ DONE
 
 
 reverseBits
+; reverses every bit in a word (D3)
+; used for MOVEM's register lists to simplify printing
     ; we want the result in D3, so save D3 to D1
     MOVE.W      D3,D1
     CLR.L       D3
@@ -414,6 +416,7 @@ reverseBitsLoop
     SUB         #1,D0
     BNE         reverseBitsLoop
     RTS
+    
 ;idea:
 ; to make this modular (able to handle postinc & predec without redundant code):
 ; we set a reg to hold a value we iterate by (1 or -1)
@@ -421,10 +424,8 @@ reverseBitsLoop
 ; we set a reg to hold end bit ptr value (15 or 0)
 ; better yet, make the method process the list one way
 ;   then if the list goes in reverse order, reverse the bits
-
-; TODO: print the forward slash in front of every enabled register except the first
-; TODO: use two loops of 8, and use a Dn to store a charToPrint (either 'D' or 'A')
 printRegList
+    MOVEM.L     D1-D3,-(SP)
     ; load the register list
     BSR         readFromFile    
     ; check direction bit so we know the list format
@@ -437,16 +438,69 @@ printRegList
 printRegList_1
     ; set counter
     CLR         D0
-    ; set the foundReg bool to 0 (we use D1 for this)
+    ; set the foundReg to 0 (we use D1 for this)
     CLR.L       D1
+    CLR.L       D5
 regListLoop
-
-
+    MOVE.W      D3,D2
+    AND.W       #1,D2
+    BNE         regIsUsed
+    CMP.B       #0,D1
+    BEQ         regIsUsed
+    ; print a forward slash if we need to
+    CMP.B       #0,D5
+    BEQ         noForwardSlash
+    PRINTC      <'/'>
+noForwardSlash
+    ;*if AND result is 0 and D1 isn't 0
+    ;*  if D5 != 0
+    ;*      print /
+    ;   if D0 - 1 > D1
+    ;       print series from D1 to D0 - 1
+    ;   else
+    ;       print D1
+    MOVE.B      D0,D2
+    SUB.B       #1,D2
+    CMP.B       D2,D1
+    BGE         printSeriesStart ;```possible error with this branch logic (alternative is BGT, or BLE/BLT)
+    ; print the series from D1 to D0 - 1
+    BSR         printMovemRegister
+    ; change D1 to D2 so we can print the series' end
+    PRINTC      <'-'>
+    MOVE.B      D2,D1
+    ANDI.L      #$FF,D1
+printSeriesStart
+    BSR         printMovemRegister
+    BRA         regIsInSeries
+    ; if AND result is 1 (not 0)
+    ;   if D1 is 0
+    ;       D1 = D0 (set as current index)
+regIsUsed
+    CMP.B       #0,D1
+    BNE         regIsInSeries
+    MOVE.B      D0,D1
+regIsInSeries
+    ADD.B       #1,D0
+    LSR.W       #1,D3
     CMP.B       #16,D0
     BLT         regListLoop
+    MOVEM.L     (SP)+,D1-D3
+    RTS
 
-regListLoopTail
-*    CMP.B       
+printMovemRegister
+    CMP.B       #7,D1
+    BGT         printMovemAn
+    ; Data reg
+    PRINTC      <'D'>
+    BRA         printMovemRegVal
+printMovemAn
+    ; Addr reg
+    PRINTC      <'A'>
+    SUB.B       #8,D1
+printMovemRegVal
+    PRINTN      D1
+    MOVE.B      #1,D5
+    RTS
 
 *   Parse the bitmask for a MOVEM instruction, and print the list of registers being moved
 *   D1 - Bitmask
@@ -454,7 +508,8 @@ regListLoopTail
 *   D2 - Bit storage
 *   D0 - Sequential register start (0-7)
 printM
-    PRINT       <'[Reg list]'>
+*    PRINT       <'[Reg list]'>
+    BSR         printRegList
     RTS
 
 *   Print the address destination for a branch/jump instruction

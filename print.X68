@@ -51,9 +51,11 @@ PRINTN    MACRO
     ENDM
 
 PRINTC      MACRO
+    MOVEM.L D0-D1,-(SP)
     MOVE.B  #\1,D1
     MOVE.B  #6,D0
     TRAP    #15
+    MOVEM.L (SP)+,D0-D1
     ENDM
 
 PRINTT   MACRO
@@ -92,6 +94,7 @@ PRINTH  MACRO
     MOVE.L  \2,D3           ;amount of chars to print
     BSR     hexPrinter
     ENDM
+
 
 *~Font name~Courier New~
 *~Font size~10~
