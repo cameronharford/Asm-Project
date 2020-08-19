@@ -154,22 +154,6 @@ checkMode
 ; D5 contains the mode we must check
 ; D3 contains the arg value (Xn)
 ; A0 contains the address of either S_MODE_FLAGS or D_MOVE_FLAGS
-*    RTS
-*    CMP.W       #0,(A0)
-*    ; if the flag is 0, the instruction doesn't use the arg
-*    ; note: this indicates whether an instruction that CAN use an arg doesn't do so;
-*    ; we aren't checking instructions that never have an arg type
-*    ; ex: NOT never has a source arg, so it won't call this function
-*    BNE         checkMode_1
-*    ; therefore, we can just return
-*    RTS
-checkMode_1
-*    RTS
-*    PRINT       <' MODE: '>
-*    PRINTN      D5
-*    PRINT       <' FLAG: '>
-*    PRINTN      (A0)
-*    PRINTC      <' '>
     CMP.B       #%111,D5
     BNE         checkMode_2
     ADD         D3,D5
@@ -203,6 +187,7 @@ getOpcodeSize
 getMoveSize
     isoBitsM    D4,#13,#12
     RTS
+    
 
 printOpcodeSize
     PRINTC      <'.'>
@@ -254,11 +239,9 @@ invalidOpcode
 
 badArg
     PRINT       <'[illegal arg]'>
-*    RTS
 skipArgPrint
 ; skips over the arg value printer since we already printed [invalid arg]
 ; forces RTS to use previous branch call return address by changing SP
-    ;```
     ADD         #4,SP
     RTS
     
@@ -275,6 +258,7 @@ RUNTRAP     MACRO
     MOVE.B  \1,D0
     TRAP    #15
     ENDM
+
 
 
 

@@ -367,7 +367,8 @@ printAddrPreDec
 printAbsShort
     PRINTC      <'$'>
     BSR         readFromFile
-    BRA         printReg
+    PRINTH      D3,#4
+    RTS
     
 printAbsLong
     PRINTC      <'$'>
@@ -434,18 +435,15 @@ printRegList
     BEQ         printRegList_1
     BSR         reverseBits
 printRegList_1
-    ; load counter
-    *MOVE.B      #$16
+    ; set counter
+    CLR         D0
     ; set the foundReg bool to 0 (we use D1 for this)
     CLR.L       D1
 regListLoop
-    CMP.W       #0,D1
-    BEQ         postIncList
-preDecList
-    
 
-    BRA         regListLoopTail
-postIncList
+
+    CMP.B       #16,D0
+    BLT         regListLoop
 
 regListLoopTail
 *    CMP.B       
@@ -465,6 +463,7 @@ printDisp
     MOVE.L      A1,D3
     JMP         printReg
     RTS
+
 
 
 
