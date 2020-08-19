@@ -9,7 +9,6 @@ START
 *A5 - the console window current line
 *A6 - our current memory location to read for the opcode requester
 WELCOME
-	MOVE.L	#0,A5                  ;reset A5 line counter in case program is being re-run
     MOVE.L  #$FF00,D1              ;clear the screen in case the program is being re-run
     RUNTRAP <#11>
     PRINT   <'               @...@ .(../%  %..*(  %...( .#..*/  #..*.                        '>,ENDL
@@ -167,14 +166,17 @@ P_CONTINUE
     BEQ     P_CLEARSCREEN
     JMP     P_CONTINUE              ;otherwise just continue reading
 P_DONE
-    PRINT   <'Load another datafile and press y to continue'>,ENDL
-    PRINT   <'Press any other key to exit'>,ENDL
+    PRINT   <'Press y to restart program.'>,ENDL
+    PRINT   <'Press any other key to exit.'>,ENDL
     RUNTRAP <#5>
     CMP.B   #'y',D1
+    BEQ     START
+    CMP.B   #'Y',D1
     BEQ     START
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END     START
+
 
 
 
