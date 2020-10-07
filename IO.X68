@@ -11,12 +11,25 @@
 ;MOVEM
 ;TEST_MOVEM.bin $7000 - $706D
 
-
-;filename   dc.b 'TEST_MEGA.bin',0
-;filename    dc.w 'TEST_FINAL.bin',0
-filename    dc.w 'TEST_BRANCH.bin',0
 debugStart EQU  $7000
-debugEnd   EQU  $7206
+
+filename    dc.b 'TEST_MEGA.bin',0
+debugEnd    EQU  $75E8
+
+;filename    dc.w 'TEST_FINAL.bin',0
+;debugEnd    EQU  $7206
+
+;filename    dc.w 'TEST_BRANCH.bin',0
+;debugEnd    EQU  $702E
+
+;filename    dc.w 'TEST_MOVEM.bin',0
+;debugEnd    EQU  $706D
+
+;filename    dc.w 'TEST_TEST.bin',0
+;debugEnd    EQU  $7373
+
+;filename    dc.w 'TEST_DEMO.bin',0
+;debugEnd    EQU  $72BC
 
 START
 
@@ -56,7 +69,7 @@ WELCOME
     PRINT   <'   .(#%%%%%%@&%*@********@@%((((((Cameron Harford((((((((((@/**/&**%           '>,ENDL
     PRINT   <'  #&..........(*&/*****%&@@@((((((((Isaac Jones((((((((((((%@@@@@/*@........&  '>,ENDL
     PRINT   <'             #**(%*****###@@((((((((((Kelly Pratama(((((((((@******((.....     '>,ENDL
-    PRINT   <'    &&&&&&&&&&&@*@*****/&*@@%((((((((((Jerahmy Bindon(((((((@/******@&@@@@@@(  '>,ENDL
+    PRINT   <'    &&&&&&&&&&&@*@*****/&*@@%(((((((((((((((((((((((((((((((@/******@&@@@@@@(  '>,ENDL
     PRINT   <'   .#..........&/&******@*&@@(((((((((((((((((((((((((((((((%%***(@#&.......*( '>,ENDL
     PRINT   <'              #**/#*****&((@@#(((((((((((((((((((((((((((((((@@@@@@*&#         '>,ENDL
     PRINT   <'    @(..........@*@&&&&&&&*@@@@@&@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/*****/@/*.....% '>,ENDL
@@ -142,30 +155,7 @@ LOOP_TAIL
 *D2 - shift loop index
 *D1 - char storage
 SUB_printRegister
-    MOVE.L  #8,D3           ;amount of chars to print
-PR_LOOP
-    MOVE.L  A6,D1
-    CLR     D2
-PR_SHIFTLOOP
-    ADD.L   #1,D2
-    CMP.B   D3,D2
-    BEQ     PR_NUM          ;move on when we've shifted enough
-    LSR.L   #4,D1           ;shift the char we want down to the lowest nibble position
-    JMP     PR_SHIFTLOOP
-PR_NUM    
-    AND.L   #$F,D1          ;extract lowest nibble
-    CMP.B   #9,D1           ;find out if its 0-9 or a-f
-    BGT     PR_LETTER
-    ADD.B   #'0',D1         ;convert to ascii
-    RUNTRAP <#6>            ;print the char
-    JMP     PR_LOOP_TAIL
-PR_LETTER    
-    ADD.B   #55,D1    ;'A' - 10
-    RUNTRAP <#6>
-PR_LOOP_TAIL
-    SUB.B   #1,D3
-    CMP.B   #0,D3
-    BNE     PR_LOOP
+    PRINTH  A6,#8
     PRINTT
     RTS
 
@@ -223,6 +213,16 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END     START
+
+
+
+
+
+
+
+
+
+
 
 
 

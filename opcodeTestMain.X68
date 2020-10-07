@@ -8,15 +8,25 @@
 
     INCLUDE     "parseInstructionMain.X68"
 START:
+    PRINTC  <'0'>
+    PRINTC  <'1'>
+    PRINTC  <'2'>
+    PRINTC  <'3'>
+
+
+
+
     ; D0 should have the 16 bit opcode (may change this later)
     PRINT   <'Start of test'>,ENDL
     
     PRINTH  #$12AB,#4
+    PRINT   <''>,ENDL
     PRINTH  #$82DA,#4
+    PRINT   <''>,ENDL
     PRINTH  #$34,#2
-    
-    
-    
+    PRINT   <''>,ENDL
+    PRINTH  #$4321,#8
+    PRINT   <''>,ENDL
     
     
     PRINT   <' Tab test:'>
@@ -75,7 +85,12 @@ ADDBYTES    DC.W    $D202 ; ADD.B
 *            DC.W    $B240 ; CMP
 *            DC.W    $4440 ; NEG
 *            DC.W    $3652 ; MOVEA
-            DC.W    $4C95,$1777 ; MOVEM
+            DC.W    $48A7,$00FE ; MOVEM       A0-A6,-(A7)
+            DC.W    $4C9F,$7F00 ; MOVEM       (A7)+,A0-A6
+            DC.W    $4C9F,$00FF ; MOVEM       (A7)+,D0-D7
+            DC.W    $48E5,$EEE8 ; MOVEM       D0-D2/D4-D6/A0-A2/A4,-(A5)
+            DC.W    $4CA7,$7F00 ; MOVEM       -(A7),D1-D7 (illegal)
+
 *            DC.W    $8451 ; OR
 *            DC.W    $E6D9 ; ROR
             DC.W    $E2F8,$1234,$E2D9,$E2E2 ; LSR
@@ -107,6 +122,10 @@ BRANCHBYTES DC.W    $6000,$003E
             DC.W    $FFFF
             
     END    START        ; last line of source
+
+
+
+
 
 
 

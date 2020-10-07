@@ -114,7 +114,6 @@ code0100
     ; we saved bits 11-6 into D1 earlier so we can check directly
     EORI.B      #%100111,D1
     CMP.B       #%111100,D1
-;``` ble might make NOT read as invalid
     BLE         invalidOpcode
     ; NOT bits 11-6 XOR'd by 100111 is largest value within 0100 section
     ; possible values for NOT: 111111, 111110, 111101
@@ -159,7 +158,7 @@ sub_lea
 ************************************************************
 branchIdentify
     ; set the instruction type
-	MOVE.L      #10,D5
+	MOVEQ       #10,D5
 	
 	; load branch table addr and jump
 	isoBitsM    D4,#11,#8
@@ -240,8 +239,7 @@ subIdentify
     ; if bits 7-6 are 11, opcode is SUBA
     ; if dest is a data reg, the opcode is sub
     ; otherwise, invalid opcode
-    ; SUBI has different 15-12 bits so we don't worry about it  
-    
+    ; SUBI has different 15-12 bits so we don't worry about it
     BSR         addSubHelper
     PRINT       <'SUB'>
     RTS
@@ -251,25 +249,19 @@ subIdentify
 **                         MULS/AND                       **
 ************************************************************
 code1100
-    ; TODO: optimize this
-    
 	; ABCD: bits 8-4 are always 10000
 	; EXG: bits 8-4 are always 1__00
 	isoBitsM    D4,#8,#4
 	ANDI.B      #%10011,D0
 	CMP.B       #%10000,D0
 	; this check and branch takes care of ABCD and EXG
-	; TODO: test for false positives here
 	BEQ         invalidOpcode
 		
 	; MULS: bit 8 is always 1 vs MULU where it's always 0
 	isoBitsM    D4,#8,#6
 	CMP.B       #%011,D0
 	BEQ         invalidOpcode
-;```
     BGT         sub_muls
-*	CMP.B       #%111,D0
-*	BEQ         sub_muls
 	; ANDI has different 15-12 bits than AND
 	; AND has every bit after 12 non-constant
 	; so AND is determined by ruling out other opcodes
@@ -354,8 +346,6 @@ sub_asd
     
 sub_lsd
     PRINT       <'LS'>
-    BRA         printShiftDirection
-
     
 printShiftDirection
     ; first check the direction bit
@@ -368,6 +358,10 @@ printShiftDirection
 shiftR
     PRINTC      <'R'>
     RTS
+
+
+
+
 
 
 

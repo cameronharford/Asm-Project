@@ -346,6 +346,25 @@ MOVEM   MOVEM       D0-D7,(A7)
         MOVEM.L     A0/A1/A2/D4/D5/D6,$2B(A3,D3.L)  
         MOVEM.L     (A0)+,A0/A1/A2/D4/D5/D6 
         
+        
+REGLISTTESTING
+        MOVEM.L     D0-D7/A0-A6,(SP)
+        MOVEM.L     (SP)+,D0-D7/A0-A6
+        MOVEM.L     D0-D7/A0-A6,-(SP)
+
+        MOVEM.L     D0-D7/A0-A6,$1234
+        MOVEM.L     D0-D7/A0-A6,$A234
+        MOVEM.L     D0-D7/A0-A6,$FFFFA234
+
+        MOVEM.L     $1234,D0-D7/A0-A6
+        MOVEM.L     $A234,D0-D7/A0-A6
+        MOVEM.L     $FFFFA234,D0-D7/A0-A6
+        
+        MOVEM.L     D0,-(A0)
+        MOVEM.L     D0,(A0)
+        MOVEM.L     (A0),D0
+        MOVEM.L     (A0)+,D0
+
   	  SIMHALT             ; halt simulator
 
 * Put variables and constants here
@@ -356,6 +375,8 @@ TEST2   MOVE.B   #$20,D2
         RTS
         
     END    START        ; last line of source
+
+
 
 
 *~Font name~Courier New~

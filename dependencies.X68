@@ -157,11 +157,10 @@ checkMode
     BNE         checkMode_2
     ADD         D3,D5
     ; I add arg value to mode here because 111 has several cases;
-    ; the flag variable has these cases following consecutively after mode
+    ; the flag variable has those cases following consecutively after mode
     ; ie: 7-11
 checkMode_2
     MOVE.W      #1,D2
-*    MOVE.W      (A1),D2
     LSL.W       D5,D2
     AND.W       D2,(A1)
     BEQ         badArg
@@ -243,7 +242,6 @@ skipArgPrint
 ; forces RTS to use previous branch call return address by changing SP
     ADD         #4,SP
     RTS
-    
 
 ; Macro for conveniently running a Text I/O Trap 15 function
 RUNTRAP     MACRO
@@ -257,44 +255,6 @@ RUNTRAP     MACRO
     MOVE.B  \1,D0
     TRAP    #15
     ENDM
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

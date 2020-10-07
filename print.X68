@@ -16,7 +16,7 @@ TEXT    EQU     1
     ORG         $3000
     SECTION     CODE
     ORG         CODE_LOC
-*    ORG         $2000
+
 
 * print the text string
 * use ENDL as second argument to add return and linefeed
@@ -38,7 +38,6 @@ MSG\@    DC.B    \1
     ENDM
 
 
-* print the number
 PRINTN    MACRO
     SECTION     CODE
     MOVEM.L     D0-D1,-(SP)
@@ -51,49 +50,119 @@ PRINTN    MACRO
     ENDM
 
 PRINTC      MACRO
-    MOVEM.L D0-D1,-(SP)
+; prints a single character from a single arg
+    MOVEM.W D0-D1,-(SP)
     MOVE.B  #\1,D1
     MOVE.B  #6,D0
     TRAP    #15
-    MOVEM.L (SP)+,D0-D1
+    MOVEM.W (SP)+,D0-D1
     ENDM
 
 PRINTT   MACRO
+; macro for printing a tab character
+    BSR     printTab
+    ENDM
+    
+printTab
     PRINTC  <9>
+    RTS
+
+PRINTS      MACRO
+; macro for printing spaces
+; because PRINTT always prints 4 spaces, not aligning
+    IFC '\1','1'
+        BSR     spaceOne
+    ENDC
+    IFC '\1','2'
+        BSR     spaceTwo
+    ENDC
+    IFC '\1','3'
+        BSR     spaceThree
+    ENDC
+    IFC '\1','4'
+        BSR     spaceFour
+    ENDC
+    IFC '\1','5'
+        BSR     spaceOne
+        BSR     spaceFour
+    ENDC
+    IFC '\1','6'
+        BSR     spaceTwo
+        BSR     spaceFour
+    ENDC
+    IFC '\1','7'
+        BSR     spaceThree
+        BSR     spaceFour
+    ENDC
+    IFC '\1','8'
+        BSR     spaceFour
+        BSR     spaceFour
+    ENDC
     ENDM
 
+; these are so the program doesn't generate several copies of space char strings
+spaceOne
+    PRINTC  <' '>
+    RTS
+spaceTwo
+    PRINT   <'  '>
+    RTS
+spaceThree
+    PRINT   <'   '>
+    RTS
+spaceFour
+    PRINT   <'    '>
+    RTS
+
+HEXBUFFER       DC.B    0,0,0,0,0,0,0,0,0,0 ; 9 bytes: 8 for long addr, 1 for null term
 
 hexPrinter
+    LEA     HEXBUFFER,A1
+    CLR.L   (A1)            ; clear the buffer so there's no random data
+    CLR.L   4(A1)
+    SUB     #1,D3           ; fix num of chars for the loop
+hexLoopStart
     MOVE.L  D6,D1
-    CLR     D2
-hexShiftLoop
-    ADD.L   #1,D2
-    CMP.B   D3,D2
-    BEQ     hexNum          ;move on when we've shifted enough
-    LSR.L   #4,D1           ;shift the char we want down to the lowest nibble position
-    JMP     hexShiftLoop
+    MOVE.L  D3,D2
+    MULS    #4,D2
+    LSR.L   D2,D1
 hexNum 
     AND.L   #$F,D1          ;extract lowest nibble
     CMP.B   #9,D1           ;find out if its 0-9 or a-f
     BGT     hexLetter
     ADD.B   #'0',D1         ;convert to ascii
-    MOVE.B  #6,D0
-    TRAP    #15             ;print the char
+    MOVE.B  D1,(A1)+        ;save char to string buffer
     JMP     hexTail
-hexLetter    
-    ADD.B   #55,D1    ;'A' - 10
-    MOVE.B  #6,D0
-    TRAP    #15
+hexLetter
+    ADD.B   #55,D1          ;'A' - 10
+    MOVE.B  D1,(A1)+        ;save char to string buffer
 hexTail
     SUB.B   #1,D3
-    BNE     hexPrinter
+    BGE     hexLoopStart
+    ; print string
+    LEA     HEXBUFFER,A1
+    MOVE.B  #14,D0
+    TRAP    #15
     RTS
 
 PRINTH  MACRO
     MOVE.L  \1,D6           ;value to print
-    MOVE.L  \2,D3           ;amount of chars to print
+    MOVE.L  \2,D3           ;amount of chars to print    
+    IFC     \2,#4
+        AND.L   #$FFFF,D6
+    ENDC
     BSR     hexPrinter
     ENDM
+
+
+
+
+
+
+
+
+
+
 
 
 *~Font name~Courier New~
