@@ -1,4 +1,4 @@
-    INCLUDE		"dependencies.X68"
+    INCLUDE     "dependencies.X68"
     
 ; jump table for bits 15-12 of an instruction opcode
 ; NOPs are used for padding because jumps to invalidOpcode
@@ -43,24 +43,24 @@ firstJmpTable
 ; to distinguish between MOVE and MOVEA, check bits 8-6
 ; if 8-6 is 001 (indicating mode is addr reg) then it's MOVEA
 moveByte     
-	; Move Byte
+    ; Move Byte
     BSR         moveBitCheck
     PRINTC      <'B'>
-	MOVEQ       #1,D5
+    MOVEQ       #1,D5
     RTS
 
 moveLong  
-	; Move Long
+    ; Move Long
     BSR         moveBitCheck
     PRINTC      <'L'>
-	MOVEQ       #1,D5
+    MOVEQ       #1,D5
     RTS
     
 moveWord  
-	; Move Word
+    ; Move Word
     BSR         moveBitCheck
     PRINTC      <'W'>
-	MOVEQ       #1,D5
+    MOVEQ       #1,D5
     RTS
 
 moveBitCheck
@@ -75,8 +75,8 @@ moveBitCheck
 **             NOT, NOP, RTS, JSR, MOVEM, LEA             **
 ************************************************************
 code0100  
-	; NOT: bits 11-8 always 0110 and bits 7-6 never 11
-	; only other opcode in this section with 11-8 0110 is MOVE to SR (7-6 always 11)
+    ; NOT: bits 11-8 always 0110 and bits 7-6 never 11
+    ; only other opcode in this section with 11-8 0110 is MOVE to SR (7-6 always 11)
     ; NOP: always 4E71
     ; RTS: always 4E74
     ; JSR: bits 11-6 always 111010
@@ -124,32 +124,32 @@ code0100
 ; Instruction-specific subroutines
 sub_not
     PRINT       <'NOT'>
-	MOVEQ       #8,D5
+    MOVEQ       #8,D5
     setFlagS    #$19D
     RTS
 sub_nop
-	PRINT       <'NOP'>,ENDL
-	; return early
-	MOVEA       A2,SP
-	RTS
+    PRINT       <'NOP'>,ENDL
+    ; return early
+    MOVEA       A2,SP
+    RTS
 sub_rts
     PRINT       <'RTS'>,ENDL
     ; return early
-	MOVEA       A2,SP
-	RTS
+    MOVEA       A2,SP
+    RTS
 sub_jsr
     PRINT       <'JSR'>
-	MOVEQ       #9,D5
-	setFlagS    #$184
+    MOVEQ       #9,D5
+    setFlagS    #$184
     RTS    
 sub_movem
     PRINT       <'MOVEM'>
-	MOVEQ       #2,D5
+    MOVEQ       #2,D5
     RTS
 sub_lea
     PRINT       <'LEA'>
-	MOVEQ       #7,D5
-	setFlagS    #$184
+    MOVEQ       #7,D5
+    setFlagS    #$184
     RTS
 
 
@@ -158,76 +158,109 @@ sub_lea
 ************************************************************
 branchIdentify
     ; set the instruction type
-	MOVEQ       #10,D5
-	
-	; load branch table addr and jump
-	isoBitsM    D4,#11,#8
-	LEA         branchJmpTable,A0	
-	BRA			calcJmpOffset
+    MOVEQ       #10,D5
+    
+    ; load branch table addr and jump
+    isoBitsM    D4,#11,#8
+    LEA         branchJmpTable,A0   
+    BRA         calcJmpOffset
 
 ; 0110
 branchJmpTable
-	JMP			sub_bra
-	
-	JMP			invalidOpcode       * BSR not required
-	NOP
-	JMP			invalidOpcode       * BHI not required
-	NOP
-	JMP			invalidOpcode       * BLS not required
-	NOP
-	JMP			sub_bcc
-	
-	JMP			invalidOpcode       * BCS not required
-	NOP
-	JMP			invalidOpcode       * BNE not required
-	NOP	
-	JMP			sub_beq
-	
-	JMP			invalidOpcode       * BVC not required
-	NOP
-	JMP			invalidOpcode       * BVS not required
-	NOP
-	JMP			invalidOpcode       * BPL not required
-	NOP
-	JMP			invalidOpcode       * BMI not required
-	NOP
-	JMP			invalidOpcode       * BGE not required
-	NOP
-	JMP			invalidOpcode       * BLT not required
-	NOP	
-	JMP			sub_bgt
-	
-	JMP			sub_ble
-
+    JMP         sub_bra
+    
+    JMP         sub_bsr     * invalidOpcode       * BSR not required
+*   NOP
+    JMP         sub_bhi     * invalidOpcode       * BHI not required
+*   NOP
+    JMP         sub_bls     * invalidOpcode       * BLS not required
+*   NOP
+    JMP         sub_bcc
+    
+    JMP         sub_bcs     * invalidOpcode       * BCS not required
+*   NOP
+    JMP         sub_bne     * invalidOpcode       * BNE not required
+*   NOP 
+    JMP         sub_beq
+    
+    JMP         sub_bvc     * invalidOpcode       * BVC not required
+*   NOP
+    JMP         sub_bvs     * invalidOpcode       * BVS not required
+*   NOP
+    JMP         sub_bpl     * invalidOpcode       * BPL not required
+*   NOP
+    JMP         sub_bmi     * invalidOpcode       * BMI not required
+*   NOP
+    JMP         sub_bge     * invalidOpcode       * BGE not required
+*   NOP
+    JMP         sub_blt     * invalidOpcode       * BLT not required
+*   NOP 
+    JMP         sub_bgt
+    
+*   JMP         sub_ble
+; we don't need a jmp if we put the function at the last table offset
+sub_ble
+    PRINT       <'BLE'>
+    RTS
 sub_bra
     PRINT       <'BRA'>
     RTS
+sub_bsr
+    PRINT       <'BSR'>
+    RTS
+sub_bhi
+    PRINT       <'BHI'>
+    RTS
+sub_bls
+    PRINT       <'BLS'>
+    RTS
 sub_bcc
     PRINT       <'BCC'>
+    RTS    
+sub_bcs
+    PRINT       <'BCS'>
     RTS
+sub_bne
+    PRINT       <'BNE'>
+    RTS    
 sub_beq
     PRINT       <'BEQ'>
     RTS
+sub_bvc
+    PRINT       <'BVC'>
+    RTS
+sub_bvs
+    PRINT       <'BVS'>
+    RTS
+sub_bpl
+    PRINT       <'BPL'>
+    RTS
+sub_bmi
+    PRINT       <'BMI'>
+    RTS
+sub_bge
+    PRINT       <'BGE'>
+    RTS
+sub_blt
+    PRINT       <'BLT'>
+    RTS
 sub_bgt
     PRINT       <'BGT'>
-    RTS
-sub_ble
-    PRINT       <'BLE'>
     RTS
 
 ************************************************************
 **                     DIVU instruction                   **
 ************************************************************
 code1000   
-	; DIVU is the only opcode we care about here 
-	; DIVU: bits 8-6 are always 011
-	; no other 1000 opcode can have 8-6 as 011 so this is the only check we need
-	isoBitsM    D4,#8,#6
-	CMP.W       #%011,D0
-	BNE         invalidOpcode
+    ; DIVU is the only opcode we care about here 
+    ; DIVU: bits 8-6 are always 011
+    ; no other 1000 opcode can have 8-6 as 011 so this is the only check we need
+    isoBitsM    D4,#8,#6
+    CMP.W       #%011,D0
+    BNE         invalidOpcode
     PRINT       <'DIVU'>
-	MOVEQ       #6,D5
-	setFlagS    #$99D
+    MOVEQ       #6,D5
+    setFlagS    #$99D
     RTS
 
 
@@ -249,33 +282,32 @@ subIdentify
 **                         MULS/AND                       **
 ************************************************************
 code1100
-	; ABCD: bits 8-4 are always 10000
-	; EXG: bits 8-4 are always 1__00
-	isoBitsM    D4,#8,#4
-	ANDI.B      #%10011,D0
-	CMP.B       #%10000,D0
-	; this check and branch takes care of ABCD and EXG
-	BEQ         invalidOpcode
-		
-	; MULS: bit 8 is always 1 vs MULU where it's always 0
-	isoBitsM    D4,#8,#6
-	CMP.B       #%011,D0
-	BEQ         invalidOpcode
+    ; ABCD: bits 8-4 are always 10000
+    ; EXG: bits 8-4 are always 1__00
+    isoBitsM    D4,#8,#4
+    ANDI.B      #%10011,D0
+    CMP.B       #%10000,D0
+    ; this check and branch takes care of ABCD and EXG
+    BEQ         invalidOpcode
+        
+    ; MULS: bit 8 is always 1 vs MULU where it's always 0
+    isoBitsM    D4,#8,#6
+    CMP.B       #%011,D0
+    BEQ         invalidOpcode
     BGT         sub_muls
-	; ANDI has different 15-12 bits than AND
-	; AND has every bit after 12 non-constant
-	; so AND is determined by ruling out other opcodes
-	
+    ; ANDI has different 15-12 bits than AND
+    ; AND has every bit after 12 non-constant
+    ; so AND is determined by ruling out other opcodes
+    
 sub_and
     PRINT       <'AND'>
-	MOVEQ       #3,D5
-	setFlagS    #$19D
+    MOVEQ       #3,D5
+    setFlagS    #$19D
     RTS
-
 sub_muls
     PRINT       <'MULS'>
-	MOVEQ       #6,D5
-	setFlagS    #$99D
+    MOVEQ       #6,D5
+    setFlagS    #$99D
     RTS
 
 ************************************************************
@@ -304,18 +336,18 @@ addSubHelper
     CMP.W       #256,D0
     BEQ         invalidOpcode
     ; if we got here, the opcode is a valid sub/add
-	MOVEQ       #3,D5
-    setFlagS    #%10
+    MOVEQ       #3,D5
+*    setFlagS    #%10
     RTS
 
 ************************************************************
 **             bitshift instructions (ASd/LSd)            **
 ************************************************************
 shiftIdentify  
-	; there are two variants of ASd and LSd
-	; check bits 7-6 to determine which kind
-	; bit 8 always tells the direction (ASR vs ASL)
-    BSR     	getOpcodeSize
+    ; there are two variants of ASd and LSd
+    ; check bits 7-6 to determine which kind
+    ; bit 8 always tells the direction (ASR vs ASL)
+    BSR         getOpcodeSize
     LEA         shiftJmpTable,A0  
     CMP.B       #%11,D0
     BNE         typeTwo
@@ -323,27 +355,26 @@ shiftIdentify
 typeOne
     ; for type one, we need to check bits 10-9
     isoBitsM    D4,#10,#9
-	MOVEQ       #4,D5
+    MOVEQ       #4,D5
     BRA         calcJmpOffset
 typeTwo
     ; type two checks bits 4-3
     isoBitsM    D4,#4,#3
-	MOVEQ       #5,D5
+    MOVEQ       #5,D5
     BRA         calcJmpOffset
-	
+    
 shiftJmpTable
-    JMP			sub_asd ; for ASR/ASL
+    JMP         sub_asd ; for ASR/ASL
     
-    JMP			sub_lsd ; for LSR/LSL
+    JMP         sub_lsd ; for LSR/LSL
     
-	JMP			invalidOpcode       * ROXd * not required
-	NOP
-	JMP			invalidOpcode		* ROd * not required
-	
+    JMP         invalidOpcode       * ROXd * not required
+    NOP
+    JMP         invalidOpcode       * ROd * not required
+    
 sub_asd
     PRINT       <'AS'>
     BRA         printShiftDirection
-    
 sub_lsd
     PRINT       <'LS'>
     
@@ -358,6 +389,9 @@ printShiftDirection
 shiftR
     PRINTC      <'R'>
     RTS
+
+
+
 
 
 

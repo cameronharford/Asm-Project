@@ -103,42 +103,6 @@ LOOP_TAIL
     RTS
 
 ************************************************************
-**                  print register value                  **
-************************************************************
-*A6 - the register we are printing out
-
-*D3 - loop index
-*D2 - shift loop index
-*D1 - char storage
-SUB_printRegister
-    MOVE.L  #8,D3           ;amount of chars to print
-PR_LOOP
-    MOVE.L  A6,D1
-    CLR     D2
-PR_SHIFTLOOP
-    ADD.L   #1,D2
-    CMP.B   D3,D2
-    BEQ     PR_NUM          ;move on when we've shifted enough
-    LSR.L   #4,D1           ;shift the char we want down to the lowest nibble position
-    JMP     PR_SHIFTLOOP
-PR_NUM    
-    AND.L   #$F,D1          ;extract lowest nibble
-    CMP.B   #9,D1           ;find out if its 0-9 or a-f
-    BGT     PR_LETTER
-    ADD.B   #'0',D1         ;convert to ascii
-    RUNTRAP <#6>            ;print the char
-    JMP     PR_LOOP_TAIL
-PR_LETTER    
-    ADD.B   #55,D1    ;'A' - 10
-    RUNTRAP <#6>
-PR_LOOP_TAIL
-    SUB.B   #1,D3
-    CMP.B   #0,D3
-    BNE     PR_LOOP
-    PRINTT
-    RTS
-
-************************************************************
 **                    INSTRUCTION PRINTER                 **
 ************************************************************
 *A5 - line counter
@@ -157,7 +121,8 @@ P_CONTINUE
     CMP.L   (A0),A6                 ;check if we are done reading the file
     BGT     P_DONE                  ;jump to the ask-to-read-another-file printout and termination
 ;printing an instruction and updating our instruction pointer
-    BSR     SUB_printRegister       ;print the value of A6 out to console 
+    PRINTH  A6,#8
+    PRINTT                          ;print the value of A6 out to console 
     BSR     parseInstructionMain
     ADD     #1,A5                   ;update how many lines we have printed out
     
@@ -176,6 +141,7 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END     START
+
 
 
 

@@ -1,6 +1,5 @@
     INCLUDE     "findOpcodeMain.X68"
 
-; might want to include branch displacement calc function here if I don't use it in instr identification
 parseInstructionMain: 
     ; save SP so if opcode is invalid, we can return immediately
     MOVEA       SP,A2
@@ -13,6 +12,7 @@ parseInstructionMain:
     ; Basically, findOpcodeMain deals with identifying the name. It sets a string or flag somewhere for us
     ; Based on this flag, we know the instruction's format
     LEA         instrTypeTable,A0
+
     ; D5 currently contains the index for the jump table
     MOVE.L      D5,D0
     SUB         #1,D0
@@ -21,7 +21,7 @@ parseInstructionMain:
     ; endl
     PRINT       <''>,ENDL
     
-	RTS
+    RTS
 
 
 
@@ -64,22 +64,22 @@ instrTypeTable
 instrTypeOne
 ; for MOVE
     PRINTS      <2>    
-    ; check source mode
+
+    ; check source mode & print source arg (or invalid arg)
     BSR         getSrcReg
     BSR         getSrcMode
-    ; print source arg (or invalid arg)
+
     ; comma
     PRINTC      <','>
     
-    ; check dest mode
+    ; check dest mode & print dest arg
     BSR         getDestReg
-    BSR         getDestMode
-    ; print dest arg
-    RTS
+    BRA         getDestMode
 
 instrTypeTwo
 ; for MOVEM
     PRINTC      <'.'>
+
     ; print size first
     ; size is determined by bit 6
     ; it's either 0 (W) or 1 (L)
@@ -92,10 +92,12 @@ movemWordSize
     PRINTC      <'W'>
 instrTypeTwo_2
     PRINTS      <1>
+
     ; get direction bit to determine the print order
     MOVE.W      D4,D1
     AND.W       #$400,D1 
-    BEQ         regMem  
+    BEQ         regMem
+
     ; Direction 1 -> memory to register
     setFlagS    #$18C
     BSR         getSrcReg
@@ -113,16 +115,18 @@ regMem
     
 instrTypeThree
 ; for ADD, SUB, AND
-*{
     BSR         printOpcodeSize
     PRINTS      <3>
+
     ; check direction bit to determine the print order
     MOVE.L      D4,D1
     AND.L       #256,D1
+
     ; if result isn't 0, we'll print dest before source
     ; we also must adjust mode restrictions to account for this direction
     ; if result isn't 0, src mode can't be Dn
     BNE         destToSrc
+
     ; otherwise, print as normal
     setFlagS    #$19F
     
@@ -132,49 +136,47 @@ instrTypeThree
     PRINTC      <','>
     
     BSR         getDestReg
-    BSR         printRegD   ; Print register
+    BRA         printRegD   ; Print register
     
-    RTS
 destToSrc
     setFlagS    #$19C
     
     ; print dest arg
     BSR         getDestReg
     BSR         printRegD   ; Print register
+    
     ; check source mode
     ; print source arg (or invalid arg)    
     PRINTC      <','>
     
     BSR         getSrcReg
-    BSR         getSrcMode
-    RTS
-*}
+    BRA         getSrcMode
 
 instrTypeFour
 ; for LSd/ASd (type 1, single arg)
     PRINTS      <5>
+
     ; type 1 doesn't have a size, so no need to print it
     setFlagS    #$99F
     BSR         getSrcReg
-    BSR         getSrcMode
-    
-    RTS
+    BRA         getSrcMode
 
 instrTypeFive
 ; for LSd/ASd (type 2)
     BSR         printOpcodeSize
     PRINTS      <3>
+
     ; type 2 uses an immediate or data reg between 1-8
     ; bit #5 determines the arg type for rotation field
     isoBitsM    D4,#5,#5
     BNE         regShift    ; Shift amount is in data register, stored in instruction
     
 immShift
-; TODO: optimize Jerahmy's shitty code
     PRINTC      <'#'>
     isoBitsM    D4,#11,#9
     MOVE.B      D0,D1
     BNE         immLessThanEight
+
     ; if the value is 0, it's actually 8
     ; therefore, we must offset this
     ADDI.B      #8,D1
@@ -188,26 +190,25 @@ regShift
 shiftDest
     PRINTC      <','>
     BSR         getSrcReg   ; Isolate register being shifted
-    BSR         printRegD   ; Print register
-    
-    RTS
+    BRA         printRegD   ; Print register
 
 instrTypeSix
 ; for DIVU/MULS
     PRINTS      <4>
-    ;check source mode
+
+    ; check source mode
     BSR         getSrcReg
     BSR         getSrcMode
     PRINTC      <','>
     
-    ;print dest data register
+    ; print dest data register
     BSR         getDestReg
-    BSR         printRegD
-    RTS
+    BRA         printRegD
 
 instrTypeSeven
 ; for LEA
     PRINTS      <5>
+
     ;check source mode
     BSR         getSrcReg
     BSR         getSrcMode
@@ -216,23 +217,20 @@ instrTypeSeven
     
     ; print dest address register
     BSR         getDestReg
-    BSR         printRegA
-    RTS
+    BRA         printRegA
 
 instrTypeEight
 ; for NOT
     BSR         printOpcodeSize
     PRINTS      <3>
     BSR         getSrcReg
-    BSR         getSrcMode
-    RTS
+    BRA         getSrcMode
 
 instrTypeNine
 ; for JSR
     PRINTS      <5>
     BSR         getSrcReg
-    BSR         getSrcMode
-    RTS
+    BRA         getSrcMode
     
 instrTypeTen
 ; for branching (BRA/BEQ/BGT/BLE)
@@ -242,6 +240,7 @@ instrTypeTen
 
 getSrcMode
     isoBitsM    D4,#5,#3
+
     ; check for illegal modes
     LEA         sModeFlag,A1
     MOVE.L      D0,D5
@@ -252,6 +251,7 @@ getSrcMode
     
 getDestMode
     isoBitsM    D4,#8,#6
+
     ; check for illegal modes
     LEA         dModeFlag,A1
     MOVE.L      D0,D5
@@ -327,7 +327,6 @@ modeJmpTableExtra
     NOP
     ; 111
     RTS
-*    JMP         badArg
     
 printRegD
     PRINTC      <'D'>
@@ -335,6 +334,8 @@ printRegD
 printRegA
     PRINTC      <'A'>
 printReg
+; prints register number, such as 5 for D5, or 2 for A2
+
     MOVE.B      D3,D1
     ADDI.B      #$30,D1     ; Convert to ASCII equivalent
     RUNTRAP     <#6>
@@ -358,42 +359,37 @@ printAddrPreDec
 
 printAbsShort
     PRINTC      <'$'>
-    BSR         readFromFile
-    PRINTH      D3,#4
+    BSR         printShort
     RTS
-    
-; TODO: simplify into two calls to Abs Short
+
 printAbsLong
     PRINTC      <'$'>
-    BSR         readFromFile
-    ; Print Address
-    PRINTH      D3,#4
-    BSR         readFromFile
-    ; Print Address
-    PRINTH      D3,#4
+    BSR         printShort
+    BSR         printShort
     RTS
     
 printImmediate
     PRINT       <'#$'>
     
-    BSR         readFromFile    
-    ; Print value
-    PRINTH      D3,#4
+    BSR         printShort
     
     BSR         getOpcodeSize   ; Puts binary for instruction size in D0 (00 for byte, 01 for word, 10 for long)
     CMP.B       #$2,D0          ; If size bits indicate long, read another word from memory
     BNE         DONE
     
-    BSR         readFromFile   
-    ; Print value
-    PRINTH      D3,#4    
+    BSR         printShort   
 DONE
     RTS
 
+printShort
+    BSR         readFromFile
+    PRINTH      D3,#4
+    RTS
 
 reverseBits
 ; reverses every bit in a word (D3)
 ; used for MOVEM's register lists to streamline printing
+
     ; we want the result in D3, so save D3 to D1
     MOVE.W      D3,D1
     CLR.L       D3
@@ -410,23 +406,30 @@ reverseBitsLoop
 
 
 printRegList
-    MOVEM.L     D1-D3,-(SP)    
+    MOVEM.L     D1-D3,-(SP) 
+    
     ; load the register list
     BSR         readFromFile
+
     ; check dest mode so we know the list format
     ; if mode is predec, list is normal order
     ; if mode is anything else, we need to reverse the list first
     MOVE.W      D4,D1
     AND.W       #%011000,D1
-    BNE         printRegList_init
+
     ; the only mode that equals 0 is predec, because 100XX & 011000 = 0
     ; every other mode evaluates to !0
+    BNE         printRegList_init
+
+    ; if we got here, the mode is predec
     BSR         reverseBits
 printRegList_init
     ; set counter
     CLR         D0
+
     ; set the foundReg to -1 (we use D1 for this)
     MOVE.B      #-1,D1
+
     ; set forwardSlash = false
     CLR.L       D5
 mLoopStart    
@@ -438,7 +441,7 @@ bitIsOne
     CMP.B       #-1,D1
     BNE         mLoopEnd
     MOVE.B      D0,D1
-	BRA         mLoopEnd
+    BRA         mLoopEnd
 bitIsZero
     CMP.B       #-1,D1
     BEQ         mLoopEnd
@@ -448,21 +451,25 @@ bitIsZero
 noForwardSlash_2
     ; set forwardSlash = true (so we print it next time)
     MOVE.B      #1,D5
+    
     ; if this was a series of registers, D0 - 1 is greater than D1
-	; we also need to print the end of the series
-	; if it wasn't a series, D0 - 1 is equal to D1 (meaning D1 is the last register used by the register list)
-	; we don't need to print the series end, since we already printed the 1 register
+    ; we also need to print the end of the series
+    ; if it wasn't a series, D0 - 1 is equal to D1 (meaning D1 is the last register used by the register list)
+    ; we don't need to print the series end, since we already printed the 1 register
     MOVE.B      D0,D2
     SUB.B       #1,D2
     CMP.B       D1,D2
     BLE         printLastReg
     BSR         printMovemRegister
+
     ; print the dash to separate the series start and end
     PRINTC      <'-'>
+
     ; print the series end
     MOVE.B      D2,D1
 printLastReg
     BSR         printMovemRegister
+
     ; reset last_reg to -1
     MOVE.B      #-1,D1
 mLoopEnd
@@ -471,7 +478,6 @@ mLoopEnd
     BLE         mLoopStart    
     MOVEM.L     (SP)+,D1-D3
     RTS    
-    
 
 printMovemRegister
     CMP.B       #7,D1
@@ -488,7 +494,6 @@ printMovemRegVal
     MOVE.B      #1,D5
     RTS
 
-
 *   Print the address destination for a branch/jump instruction
 printDisp
     BSR         calcDispAddr
@@ -498,24 +503,27 @@ printDisp
 
 ; calculates displacement from branch instruction opcodes (hex)
 calcDispAddr
-	; D4 holds 16-bit opcode
-	; we only need the 8 LSB's for displacement
+    ; D4 holds 16-bit opcode
+    ; we only need the 8 LSB's for displacement
     MOVE.L  D4,D0
     NEG.L   D0
-    ANDI.L  #$FF,D0             ; clear
+    ANDI.L  #$FF,D0
     ; If D0 is 0 here, that means the branch uses a word extension
     ; If it's 1, it uses a long extension
     ; two's complement of 0xFF is 0x01
     ; In either case, the actual displacement is in the extension
     ; This check covers both extension cases
+
     MOVE.L  #$2,D2
     
     CMP.B   #1,D0
     BHI     calcDispAddr_1
     BNE     calcDispAddr_w_ext
+
     ; if we got here, we have a long extension
     BSR     readFromFile
     ADDI.W  #2,D2
+
     ; shift left 16 bits
     SWAP    D3
 calcDispAddr_w_ext
@@ -523,7 +531,6 @@ calcDispAddr_w_ext
     ADDI.W  #2,D2
     BRA     calcDispAddr_2 
 calcDispAddr_1
-; TODO: finish
     NEG     D0
     EXT.W   D0
     ADD.W   D0,D3
@@ -535,6 +542,9 @@ calcDispAddr_2
     
     ADDA.W  D3,A1       ; Add displacement amount to address
     RTS  
+
+
+
 
 
 

@@ -20,16 +20,16 @@ isolateBits
     RTS
 
 ; example call:
-;	MOVE.L 		#$1234,D0
-;	MOVE.B		#11,D1
-;	MOVE.B		#8,D2
-;	BSR			isolateBits
+;   MOVE.L      #$1234,D0
+;   MOVE.B      #11,D1
+;   MOVE.B      #8,D2
+;   BSR         isolateBits
 ;
 ; return from this call:
-; 	D0 = 0x2
+;   D0 = 0x2
 
-	
-*	OPT         MEX
+    
+*   OPT         MEX
 isoBitsM        MACRO
     ; args same as above, except they're immediates or different regs
     IFNE NARG-3                       ;if not 3 arguments

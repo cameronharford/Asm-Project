@@ -1,7 +1,7 @@
-	    INCLUDE     "print.X68"
-        INCLUDE		"isolateBits.X68"
-	    INCLUDE		"calcJmpOffset.X68"
-	    
+        INCLUDE     "print.X68"
+        INCLUDE     "isolateBits.X68"
+        INCLUDE     "calcJmpOffset.X68"
+        
 ; I've marked possible error locations with "```"
 * misc possible errors:
 * printing out address of instruction + 2 by accident
@@ -127,11 +127,11 @@ setFlagD        MACRO
 * Src Mode:  11 10 9  8  7  6  5  4  3  2  1  0              *
 * MOVE:     %1  0  0  1  1  0  0  1  1  1  1  1 = $99F       *
 * MOVEM:    %0  0  0  1  1  0  0  0  1  1  0  0 = $18C       *
-* ADD:      %0  0  0  1  1  0  0  1  1  1  0  1 = $19D       *
+* ADD:      %0  0  0  1  1  0  0  1  1  1  0  1 = $19F       *
 * ADD alt:  %0  0  0  1  1  0  0  1  1  1  0  0 = $19C       *
-* SUB:      %0  0  0  1  1  0  0  1  1  1  0  1 = $19D       *
+* SUB:      %0  0  0  1  1  0  0  1  1  1  0  1 = $19F       *
 * SUB alt:  %0  0  0  1  1  0  0  1  1  1  0  0 = $19C       *
-* AND:      %0  0  0  1  1  0  0  1  1  1  0  1 = $19D       *
+* AND:      %0  0  0  1  1  0  0  1  1  1  0  1 = $19F       *
 * AND alt:  %0  0  0  1  1  0  0  1  1  1  0  0 = $19C       *
 * MULS:     %1  0  0  1  1  0  0  1  1  1  0  1 = $99D       *
 * DIVU:     %1  0  0  1  1  0  0  1  1  1  0  1 = $99D       *
@@ -159,6 +159,7 @@ checkMode
     ; I add arg value to mode here because 111 has several cases;
     ; the flag variable has those cases following consecutively after mode
     ; ie: 7-11
+
 checkMode_2
     MOVE.W      #1,D2
     LSL.W       D5,D2
@@ -220,20 +221,20 @@ invalidSize
 *
 * bad argument = "[invalid arg]"
 
-invalidOpcode	
-	PRINT       <'DATA    #$'>
-	PRINTH      D4,#4
-	PRINT       <''>,ENDL
-	
+invalidOpcode   
+    PRINT       <'DATA    #$'>
+    PRINTH      D4,#4
+    PRINT       <''>,ENDL
+    
     ; to avoid memory leaks with the stack, I need to reset
-	; its ptr to what it was when findOpcodeMain was called
-	MOVEA       A2,SP
-	; the reason I need this is because if the opcode is
-	; invalid, there's no need to read the instruction args
-	; this also allows me to use RTS, since SP now points at 
-	; the return address
-	RTS
-; <instr_name>.<instr_size>(tab)(tab)<arg2(source)>,<arg1(dest)>
+    ; its ptr to what it was when findOpcodeMain was called
+    MOVEA       A2,SP
+    ; the reason I need this is because if the opcode is
+    ; invalid, there's no need to read the instruction args
+    
+    ; this also allows me to use RTS, since SP now points at 
+    ; the return address
+    RTS
 
 badArg
     PRINT       <'[illegal arg]'>
@@ -255,6 +256,7 @@ RUNTRAP     MACRO
     MOVE.B  \1,D0
     TRAP    #15
     ENDM
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

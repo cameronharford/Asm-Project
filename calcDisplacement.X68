@@ -1,7 +1,7 @@
 ; calculates displacement from branch instruction opcodes (hex)
 calcDispAddr
-	; D4 holds 16-bit opcode
-	; we only need the 8 LSB's for displacement
+    ; D4 holds 16-bit opcode
+    ; we only need the 8 LSB's for displacement
     MOVE.B  D4,D0
     NEG.B   D0
     ANDI.L  #$FF,D0             ; clear just in case

@@ -51,11 +51,11 @@ PRINTN    MACRO
 
 PRINTC      MACRO
 ; prints a single character from a single arg
-    MOVEM.W D0-D1,-(SP)
+    MOVEM.L D0-D1,-(SP)
     MOVE.B  #\1,D1
     MOVE.B  #6,D0
     TRAP    #15
-    MOVEM.W (SP)+,D0-D1
+    MOVEM.L (SP)+,D0-D1
     ENDM
 
 PRINTT   MACRO
@@ -101,6 +101,7 @@ PRINTS      MACRO
     ENDM
 
 ; these are so the program doesn't generate several copies of space char strings
+; since macros are copy & paste, space char strings would be littered everywhere
 spaceOne
     PRINTC  <' '>
     RTS
@@ -153,6 +154,7 @@ PRINTH  MACRO
     ENDC
     BSR     hexPrinter
     ENDM
+
 
 
 

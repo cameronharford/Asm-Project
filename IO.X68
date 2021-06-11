@@ -147,19 +147,6 @@ LOOP_TAIL
     RTS
 
 ************************************************************
-**                  print register value                  **
-************************************************************
-*A6 - the register we are printing out
-
-*D3 - loop index
-*D2 - shift loop index
-*D1 - char storage
-SUB_printRegister
-    PRINTH  A6,#8
-    PRINTT
-    RTS
-
-************************************************************
 **                    INSTRUCTION PRINTER                 **
 ************************************************************
 *A5 - line counter
@@ -178,29 +165,15 @@ P_CONTINUE
     CMP.L   (A0),A6                 ;check if we are done reading the file
     BGT     P_DONE                  ;jump to the ask-to-read-another-file printout and termination
 ;printing an instruction and updating our instruction pointer
-    BSR     SUB_printRegister       ;print the value of A6 out to console 
-    
-    MOVE.L  (A6),D1
-    LSR.L   #8,D1
-    LSR.L   #8,D1
-    CMP.L   #$1000,D1
-    BGE     instrPrinter
-    PRINTC  <'0'>
-    CMP.L   #$100,D1
-    BGE     instrPrinter
-    PRINTC  <'0'>
-    CMP.L   #$10,D1
-    BGE     instrPrinter
-    PRINTC  <'0'>
+    PRINTH  A6,#8
+    PRINTT
 instrPrinter
     MOVE.L  #16,D2
     RUNTRAP <#15>
-    PRINTT
-    
+    PRINTT    
     BSR     parseInstructionMain
     ADD     #1,A5
-    
-;reading how full our screen is
+                                    ;reading how full our screen is
     CMP.L   #31,A5                  ;if our screen is full we need to ask the user to press ender
     BEQ     P_CLEARSCREEN
     JMP     P_CONTINUE              ;otherwise just continue reading
@@ -213,6 +186,7 @@ P_DONE
     PRINT   <'Program halted.'>,ENDL
     RUNTRAP <#9>
     END     START
+
 
 
 
